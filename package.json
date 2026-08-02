@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "看见此刻 - AI 引导式情绪觉察工具",
   "scripts": {
+    "test": "jest",
     "dev:custom": "uni -p",
     "dev:h5": "uni",
     "dev:h5:ssr": "uni --ssr",
@@ -100,5 +101,10 @@
     "sass": "^1.99.0",
     "sharp": "^0.35.3",
     "vite": "5.2.8"
+  },
+  "jest": {
+    "setupFiles": ["./__tests__/setup.js"],
+    "testMatch": ["**/__tests__/**/*.test.js"],
+    "testPathIgnorePatterns": ["/.worktrees/", "/node_modules/"]
   }
 }

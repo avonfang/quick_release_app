@@ -1,4 +1,4 @@
-import { EMOTION_MAP } from './util'
+const util = require('./util')
 
 const ACHIEVEMENTS = [
   { id: 'first_aid', label: '初次急救', desc: '完成第一次情绪急救', icon: '🌿', check: e => e >= 1 },
@@ -16,14 +16,13 @@ const ACHIEVEMENTS = [
   { id: 'rich_emotions', label: '情绪光谱', desc: '体验过所有 4 种情绪急救', icon: '🌈', check: (e, l, p, s, d, types) => Object.keys(types).length >= 4 },
 ]
 
-export function generateInsight(entries, streakDays, totalLessons, totalDialogues) {
+function generateInsight(entries, streakDays, totalLessons, totalDialogues) {
   if (entries.length === 0 && streakDays === 0) {
     return '欢迎。每一次记录，都是看清自己的开始。'
   }
 
   const parts = []
 
-  // Streak insight
   if (streakDays > 0) {
     if (streakDays >= 30) parts.push(`你已经连续练习 ${streakDays} 天——这是非凡的坚持。你正在把觉知变成一种生活方式。`)
     else if (streakDays >= 7) parts.push(`连续 ${streakDays} 天的练习说明你已经开始形成习惯。继续走下去。`)
@@ -31,17 +30,15 @@ export function generateInsight(entries, streakDays, totalLessons, totalDialogue
     else parts.push(`你已经开始了第 ${streakDays} 天的练习。每天多一点点觉察。`)
   }
 
-  // Emotion insight
   if (entries.length > 0) {
     const types = {}
     entries.forEach(e => { types[e.emotionType] = (types[e.emotionType] || 0) + 1 })
     const topType = Object.entries(types).sort((a, b) => b[1] - a[1])[0]
-    const topLabel = EMOTION_MAP[topType[0]]?.label || topType[0]
+    const topLabel = util.EMOTION_MAP[topType[0]]?.label || topType[0]
 
     parts.push(`最近你最常出现的是「${topLabel}」。`)
     parts.push(`你的情绪急救完成了 ${entries.length} 次。`)
 
-    // Recovery trend
     const recent = entries.slice(-5)
     const old = entries.slice(0, 5)
     if (recent.length >= 3 && old.length >= 3) {
@@ -58,13 +55,11 @@ export function generateInsight(entries, streakDays, totalLessons, totalDialogue
     else if (avgRecovery >= 30) parts.push('恢复时间还有缩短空间——试试在情绪刚冒头时就做急救。')
   }
 
-  // Course insight
   if (totalLessons > 0) {
     parts.push(`已完成了 ${totalLessons} 节课程。每一课都在重塑你的内在模式。`)
     if (totalLessons >= 6) parts.push('你已经完成了至少一整条路径的学习——这是了不起的进展。')
   }
 
-  // Dialogue insight
   if (totalDialogues > 0) {
     parts.push(`写了 ${totalDialogues} 封信。通过表达，你看见了更多。`)
   }
@@ -72,8 +67,7 @@ export function generateInsight(entries, streakDays, totalLessons, totalDialogue
   return parts.join('\n')
 }
 
-export function getAchievements(entries, streaks) {
-  // Compute stats
+function getAchievements(entries, streaks) {
   const sessionCount = entries.length
 
   const progress = {}
@@ -103,7 +97,7 @@ export function getAchievements(entries, streaks) {
   return achieved
 }
 
-export function getWeekReport(entries) {
+function getWeekReport(entries) {
   if (entries.length === 0) return null
 
   const now = Date.now()
@@ -128,7 +122,6 @@ export function getWeekReport(entries) {
   const thisTotal = thisWeek.length
   const lastTotal = lastWeek.length
 
-  // Find top emotion this week
   let topEmotion = null, topCount = 0
   for (const [type, count] of Object.entries(thisCounts)) {
     if (count > topCount) { topCount = count; topEmotion = type }
@@ -139,13 +132,15 @@ export function getWeekReport(entries) {
     lastTotal,
     change: thisTotal - lastTotal,
     trend: thisTotal > lastTotal ? 'up' : thisTotal < lastTotal ? 'down' : 'same',
-    topEmotion: topEmotion ? (EMOTION_MAP[topEmotion]?.label || topEmotion) : null,
-    topEmotionIcon: topEmotion ? (EMOTION_MAP[topEmotion]?.icon || '') : '',
+    topEmotion: topEmotion ? (util.EMOTION_MAP[topEmotion]?.label || topEmotion) : null,
+    topEmotionIcon: topEmotion ? (util.EMOTION_MAP[topEmotion]?.icon || '') : '',
     thisCounts: Object.entries(thisCounts).map(([type, count]) => ({
       type,
-      label: EMOTION_MAP[type]?.label || type,
-      icon: EMOTION_MAP[type]?.icon || '',
+      label: util.EMOTION_MAP[type]?.label || type,
+      icon: util.EMOTION_MAP[type]?.icon || '',
       count
     }))
   }
 }
+
+module.exports = { generateInsight, getAchievements, getWeekReport }

@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   "presence": {
     "title": "临在之路",
     "subtitle": "从思维认同中解放",

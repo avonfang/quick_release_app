@@ -61,7 +61,7 @@ const RESPONSES = {
   ]
 }
 
-export function detectEmotion(text) {
+function detectEmotion(text) {
   for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS)) {
     for (const kw of keywords) {
       if (text.includes(kw)) return emotion
@@ -75,7 +75,7 @@ function getResponse(replyCategory, messageIndex) {
   return replies[messageIndex % replies.length]
 }
 
-export function generateReply(conversation) {
+function generateReply(conversation) {
   const lastMsg = conversation[conversation.length - 1]?.content || ''
   const allUserMsgs = conversation.filter(m => m.role === 'user')
   const turnCount = allUserMsgs.length
@@ -109,3 +109,5 @@ export function generateReply(conversation) {
 
   return getResponse('general', turnCount)
 }
+
+module.exports = { generateReply, detectEmotion }

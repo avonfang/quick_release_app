@@ -1,7 +1,15 @@
 {
   "pages": [
-    {"path": "pages/auth/index", "style": {"navigationStyle": "custom"}},
     {"path": "pages/index/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/practice/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/learning/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/learning/lesson/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/profile/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/emergency/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/breath/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/dialogue/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/quick/index", "style": {"navigationStyle": "custom"}},
+    {"path": "pages/auth/index", "style": {"navigationStyle": "custom"}},
     {"path": "pages/chat/index", "style": {"navigationStyle": "custom"}},
     {"path": "pages/card/index", "style": {"navigationStyle": "custom"}},
     {"path": "pages/beliefs/index", "style": {"navigationStyle": "custom"}},
@@ -9,42 +17,21 @@
     {"path": "pages/insight/index", "style": {"navigationStyle": "custom"}}
   ],
   "globalStyle": {
-    "navigationBarBackgroundColor": "#F3F0EA",
-    "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "看见此刻",
-    "backgroundColor": "#F3F0EA"
+    "navigationBarBackgroundColor": "#2A231D",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "此刻",
+    "backgroundColor": "#2A231D"
   },
   "tabBar": {
-    "color": "#B8AFA4",
-    "selectedColor": "#C49A6C",
-    "backgroundColor": "#FCF9F5",
-    "borderStyle": "white",
-    "height": "56px",
+    "custom": true,
+    "color": "#C4C0B8",
+    "selectedColor": "#C4A06A",
+    "backgroundColor": "#2A231D",
     "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "觉察",
-        "iconPath": "static/tabs/awareness.png",
-        "selectedIconPath": "static/tabs/awareness-active.png"
-      },
-      {
-        "pagePath": "pages/history/index",
-        "text": "记录",
-        "iconPath": "static/tabs/history.png",
-        "selectedIconPath": "static/tabs/history-active.png"
-      },
-      {
-        "pagePath": "pages/chat/index",
-        "text": "对话",
-        "iconPath": "static/tabs/chat.png",
-        "selectedIconPath": "static/tabs/chat-active.png"
-      },
-      {
-        "pagePath": "pages/insight/index",
-        "text": "我的",
-        "iconPath": "static/tabs/insight.png",
-        "selectedIconPath": "static/tabs/insight-active.png"
-      }
+      {"pagePath": "pages/index/index", "text": "首页"},
+      {"pagePath": "pages/practice/index", "text": "练习"},
+      {"pagePath": "pages/learning/index", "text": "探索"},
+      {"pagePath": "pages/profile/index", "text": "我的"}
     ]
   }
 }

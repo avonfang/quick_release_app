@@ -9,7 +9,7 @@ const mode = ref<'login' | 'register' | 'forgot' | 'reset'>('login')
 // 如果已有 token，直接跳首页避免重复登录
 onMounted(() => {
   if (isLoggedIn()) {
-    uni.reLaunch({ url: '/pages/index/index' })
+    uni.reLaunch({ url: '/pages/quick/index' })
   }
 })
 
@@ -56,7 +56,7 @@ async function handleWechatLogin() {
     setToken(data.token)
     uni.setStorageSync('userInfo', { userId: String(data.user.id) })
     try { await syncLocalToServer() } catch (e) { console.warn('Sync failed:', e) }
-    uni.reLaunch({ url: '/pages/index/index' })
+    uni.reLaunch({ url: '/pages/quick/index' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : '微信登录失败'
   } finally {
@@ -86,7 +86,7 @@ async function submit() {
     // 同步本地记录到服务端
     try { await syncLocalToServer() } catch (e) { console.warn('Sync failed:', e) }
 
-    uni.reLaunch({ url: '/pages/index/index' })
+    uni.reLaunch({ url: '/pages/quick/index' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : '操作失败'
   } finally {

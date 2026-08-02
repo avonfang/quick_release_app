@@ -123,7 +123,7 @@ const viewDetail = (item: HistoryRecord) => {
   }
   if (item.status === 'in_progress') {
     uni.setStorageSync('resumeSessionId', item.sessionId)
-    uni.switchTab({ url: '/pages/chat/index' })
+    uni.navigateTo({ url: '/pages/chat/index' })
   } else {
     uni.navigateTo({
       url: `/pages/card/index?sessionId=${item.sessionId}&recordId=${item._id}`
@@ -133,7 +133,7 @@ const viewDetail = (item: HistoryRecord) => {
 
 /** 前往心理洞察 */
 const goInsight = () => {
-  uni.switchTab({ url: '/pages/insight/index' })
+  uni.navigateTo({ url: '/pages/insight/index' })
 }
 
 onShow(() => {

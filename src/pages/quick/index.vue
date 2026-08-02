@@ -116,14 +116,17 @@ function resetFlow() {
 
 // ─── Tab navigation ────────────────────────────────────────────
 const goChat = () => {
-  uni.switchTab({ url: '/pages/chat/index' })
+  uni.navigateTo({ url: '/pages/chat/index' })
 }
 const startDeepSession = goChat
 const goHistory = () => {
-  uni.switchTab({ url: '/pages/history/index' })
+  uni.navigateTo({ url: '/pages/history/index' })
 }
 const goInsight = () => {
-  uni.switchTab({ url: '/pages/insight/index' })
+  uni.navigateTo({ url: '/pages/insight/index' })
+}
+const goHome = () => {
+  uni.switchTab({ url: '/pages/index/index' })
 }
 
 // ─── 情绪颜色映射 ──────────────────────────────────────────────
@@ -345,6 +348,11 @@ const emotionGradient: Record<string, string> = {
           <text class="h5-deep-text">进行一次完整的觉察对话 →</text>
         </view>
 
+        <!-- ═══ Home Link ═══ -->
+        <view class="h5-home" @tap="goHome">
+          <text class="h5-home-text">← 回到首页</text>
+        </view>
+
         <view class="h5-spacer"></view>
       </view>
     </view>
@@ -393,6 +401,9 @@ const emotionGradient: Record<string, string> = {
           <view class="nav-icon"><text class="nav-emoji">🧠</text></view>
           <text class="nav-text">模式</text>
         </view>
+      </view>
+      <view class="home-link" @tap="goHome">
+        <text class="home-link-text">← 回到首页</text>
       </view>
     </view>
   </view>
@@ -604,6 +615,11 @@ const emotionGradient: Record<string, string> = {
 .h5-deep { text-align: center; margin-top: 24px; cursor: pointer; padding: 8px 0; }
 .h5-deep:active { opacity: .6; }
 .h5-deep-text { font-size: 13px; color: #B8AFA4; letter-spacing: 1px; }
+
+/* ═══ Home Link ═══ */
+.h5-home { text-align: center; margin-top: 12px; cursor: pointer; padding: 8px 0; }
+.h5-home:active { opacity: .6; }
+.h5-home-text { font-size: 13px; color: #B8AFA4; letter-spacing: 1px; }
 
 /* ═══ Loading ═══ */
 .h5-step-loading {
@@ -848,6 +864,20 @@ const emotionGradient: Record<string, string> = {
 
 .nav-text {
   font-size: 24rpx;
+  color: $text-secondary;
+  letter-spacing: 2rpx;
+}
+
+/* ── Home Link ── */
+.home-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 48rpx;
+  padding: 12rpx 0;
+}
+.home-link-text {
+  font-size: 26rpx;
   color: $text-secondary;
   letter-spacing: 2rpx;
 }

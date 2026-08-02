@@ -94,7 +94,7 @@ const continueSession = () => {
   const card = cardData.value as any
   if (card?.sessionId) {
     uni.setStorageSync('resumeSessionId', card.sessionId)
-    uni.switchTab({ url: '/pages/chat/index' })
+    uni.navigateTo({ url: '/pages/chat/index' })
   }
 }
 

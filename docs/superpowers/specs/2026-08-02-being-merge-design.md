@@ -78,7 +78,7 @@
 - AI_Project 键：`awakeningCoins`、`coinLedger`、`streakDays`、`lastCheckInDate`、`hasSeenOnboarding`、`hasSeenV5Guide`、`progress_*`、`lesson_*`、`dialogueHistory`
 - uni-app 键：`token`、`userInfo`、`userId`、`cards`、`lastRecordDate`、`resumeSessionId`、quickRecords
 
-数据模块（`courses.js` / `guides.js` / `dialogue.js` / `util.js` / `coins.js` / `report.js`）由 CommonJS 转换为 ESM 后移入 `src/data`、`src/utils`。
+数据模块（`courses.js` / `guides.js` / `dialogue.js` / `util.js` / `coins.js` / `report.js`）保留 CommonJS（Jest 原生兼容），Vue 中通过 `import * as` 命名空间导入互操作使用，移入 `src/data`、`src/utils`。
 
 ## 测试
 

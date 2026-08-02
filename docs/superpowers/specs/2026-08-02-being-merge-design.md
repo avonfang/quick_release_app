@@ -76,7 +76,7 @@
 存储键经核对**无冲突**，保持不变：
 
 - AI_Project 键：`awakeningCoins`、`coinLedger`、`streakDays`、`lastCheckInDate`、`hasSeenOnboarding`、`hasSeenV5Guide`、`progress_*`、`lesson_*`、`dialogueHistory`
-- uni-app 键：`token`、`userInfo`、`userId`、`cards`、`lastRecordDate`、`resumeSessionId`、快速记录键
+- uni-app 键：`token`、`userInfo`、`userId`、`cards`、`lastRecordDate`、`resumeSessionId`、quickRecords
 
 数据模块（`courses.js` / `guides.js` / `dialogue.js` / `util.js` / `coins.js` / `report.js`）由 CommonJS 转换为 ESM 后移入 `src/data`、`src/utils`。
 

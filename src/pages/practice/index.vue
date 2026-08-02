@@ -176,7 +176,7 @@
 </template>
 
 <script>
-import { completeLesson } from '@/utils/util'
+import util from '@/utils/util'
 
 export default {
   data() {
@@ -277,7 +277,7 @@ export default {
       uni.setStorageSync('todayPractices', todayPractices)
 
       if (path && lessonId) {
-        completeLesson(path, lessonId)
+        util.completeLesson(path, lessonId)
       }
 
       uni.showToast({ title: '+2 ❤️', icon: 'success' })

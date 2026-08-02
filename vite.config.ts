@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import uni from "@dcloudio/uni-vite-plugin-uni";
+import uni from "@dcloudio/vite-plugin-uni";
 
 export default defineConfig({
   plugins: [uni()],

@@ -56,7 +56,7 @@
 
 <script>
 import courses from '@/data/courses'
-import { completeLesson } from '@/utils/util'
+import util from '@/utils/util'
 
 export default {
   data() {
@@ -156,7 +156,7 @@ export default {
 
     markComplete() {
       const { path, lesson } = this
-      const rewarded = completeLesson(path, lesson.id)
+      const rewarded = util.completeLesson(path, lesson.id)
       if (!rewarded) return
       this.isCompleted = true
       uni.showToast({ title: '+2 ❤️', icon: 'success' })

@@ -138,8 +138,8 @@
 </template>
 
 <script>
-import dialogue from '@/data/dialogue'
-import coins from '@/utils/coins'
+import * as dialogue from '@/data/dialogue'
+import * as coins from '@/utils/coins'
 
 const DAILY_FREE_LIMIT = 5
 

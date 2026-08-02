@@ -1,4 +1,4 @@
-const util = require('./util')
+import { EMOTION_MAP } from './util'
 
 const ACHIEVEMENTS = [
   { id: 'first_aid', label: '初次急救', desc: '完成第一次情绪急救', icon: '🌿', check: e => e >= 1 },
@@ -16,7 +16,7 @@ const ACHIEVEMENTS = [
   { id: 'rich_emotions', label: '情绪光谱', desc: '体验过所有 4 种情绪急救', icon: '🌈', check: (e, l, p, s, d, types) => Object.keys(types).length >= 4 },
 ]
 
-function generateInsight(entries, streakDays, totalLessons, totalDialogues) {
+export function generateInsight(entries, streakDays, totalLessons, totalDialogues) {
   if (entries.length === 0 && streakDays === 0) {
     return '欢迎。每一次记录，都是看清自己的开始。'
   }
@@ -36,7 +36,7 @@ function generateInsight(entries, streakDays, totalLessons, totalDialogues) {
     const types = {}
     entries.forEach(e => { types[e.emotionType] = (types[e.emotionType] || 0) + 1 })
     const topType = Object.entries(types).sort((a, b) => b[1] - a[1])[0]
-    const topLabel = util.EMOTION_MAP[topType[0]]?.label || topType[0]
+    const topLabel = EMOTION_MAP[topType[0]]?.label || topType[0]
 
     parts.push(`最近你最常出现的是「${topLabel}」。`)
     parts.push(`你的情绪急救完成了 ${entries.length} 次。`)
@@ -72,7 +72,7 @@ function generateInsight(entries, streakDays, totalLessons, totalDialogues) {
   return parts.join('\n')
 }
 
-function getAchievements(entries, streaks) {
+export function getAchievements(entries, streaks) {
   // Compute stats
   const sessionCount = entries.length
 
@@ -103,7 +103,7 @@ function getAchievements(entries, streaks) {
   return achieved
 }
 
-function getWeekReport(entries) {
+export function getWeekReport(entries) {
   if (entries.length === 0) return null
 
   const now = Date.now()
@@ -139,15 +139,13 @@ function getWeekReport(entries) {
     lastTotal,
     change: thisTotal - lastTotal,
     trend: thisTotal > lastTotal ? 'up' : thisTotal < lastTotal ? 'down' : 'same',
-    topEmotion: topEmotion ? (util.EMOTION_MAP[topEmotion]?.label || topEmotion) : null,
-    topEmotionIcon: topEmotion ? (util.EMOTION_MAP[topEmotion]?.icon || '') : '',
+    topEmotion: topEmotion ? (EMOTION_MAP[topEmotion]?.label || topEmotion) : null,
+    topEmotionIcon: topEmotion ? (EMOTION_MAP[topEmotion]?.icon || '') : '',
     thisCounts: Object.entries(thisCounts).map(([type, count]) => ({
       type,
-      label: util.EMOTION_MAP[type]?.label || type,
-      icon: util.EMOTION_MAP[type]?.icon || '',
+      label: EMOTION_MAP[type]?.label || type,
+      icon: EMOTION_MAP[type]?.icon || '',
       count
     }))
   }
 }
-
-module.exports = { generateInsight, getAchievements, getWeekReport }

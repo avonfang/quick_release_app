@@ -176,7 +176,7 @@
 </template>
 
 <script>
-import util from '@/utils/util'
+import * as util from '@/utils/util'
 
 export default {
   data() {

@@ -229,9 +229,9 @@
 </template>
 
 <script>
-import util from '@/utils/util'
-import report from '@/utils/report'
-import coins from '@/utils/coins'
+import * as util from '@/utils/util'
+import * as report from '@/utils/report'
+import * as coins from '@/utils/coins'
 
 export default {
   data() {

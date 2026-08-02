@@ -123,7 +123,7 @@
 </template>
 
 <script>
-import coins from '@/utils/coins'
+import * as coins from '@/utils/coins'
 
 const PATTERNS = {
   '478': { name: '4-7-8 放松', phases: [{ label: '吸气', sec: 4 }, { label: '屏息', sec: 7 }, { label: '呼气', sec: 8 }], icon: '🌙', desc: '经典的深度放松节奏', premium: false },

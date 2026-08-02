@@ -55,8 +55,8 @@
 </template>
 
 <script>
-import courses from '@/data/courses'
-import util from '@/utils/util'
+import * as courses from '@/data/courses'
+import * as util from '@/utils/util'
 
 export default {
   data() {

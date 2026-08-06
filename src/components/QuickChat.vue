@@ -22,6 +22,7 @@ function twStart(text: string) {
     if (i < chars.length) {
       displayed.value += chars[i]
       i++
+      scrollNow()
     } else {
       twStop()
     }
@@ -77,7 +78,11 @@ function startFlow() {
 }
 
 function scrollToBottom() {
-  nextTick(() => { scrollTop.value = scrollTop.value + 99999 })
+  setTimeout(() => { scrollTop.value = scrollTop.value + 99999 }, 80)
+}
+
+function scrollNow() {
+  scrollTop.value = scrollTop.value + 99999
 }
 
 let _msgId = 0

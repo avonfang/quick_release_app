@@ -404,9 +404,13 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 
 <style scoped>
 .qc-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: #2A231D;
 }
 

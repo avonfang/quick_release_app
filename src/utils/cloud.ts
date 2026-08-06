@@ -97,7 +97,7 @@ export function chatWithAI(
       },
       fail: (err: any) => {
         if (err.errMsg === 'request:fail abort') {
-          reject(new DOMException('Aborted', 'AbortError'))
+          const e = new Error('Aborted') as any; e.name = 'AbortError'; reject(e)
         } else {
           reject(new Error(err.errMsg || 'Request failed'))
         }

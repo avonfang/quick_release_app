@@ -74,12 +74,6 @@ onMounted(() => {
   startFlow()
 })
 
-const scrollHeight = computed(() => {
-  const navH = statusBarHeight.value + 44  // 44px = 88rpx
-  const inputH = (state.value === 'event' || state.value === 'thought') ? 54 : 0
-  return windowHeight.value - navH - inputH
-})
-
 function startFlow() {
   state.value = 'emotion'
 }
@@ -225,7 +219,6 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
     <!-- Messages -->
     <scroll-view
       class="qc-scroll"
-      :style="{ height: scrollHeight + 'px' }"
       scroll-y
       :scroll-top="scrollTop"
       :scroll-with-animation="true"
@@ -483,7 +476,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 
 /* ── Scroll ── */
 .qc-scroll {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
 }
 .qc-scroll-inner {
   padding: 16rpx 0 32rpx;

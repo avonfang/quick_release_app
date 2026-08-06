@@ -60,36 +60,51 @@ const form = reactive({
 })
 const aiResponse = ref('')
 const inputText = ref('')
-const scrollKey = ref(0)
+const scrollTopVal = ref(0)
 const saving = ref(false)
 
 const statusBarHeight = ref(20)
 const windowHeight = ref(0)
+const rpxRatio = ref(0.5)  // px per rpx
+const scrollViewHeight = ref(0)
+
 onMounted(() => {
   try {
     const sys = uni.getSystemInfoSync()
     statusBarHeight.value = (sys as any).statusBarHeight || 20
     windowHeight.value = (sys as any).windowHeight || 0
+    rpxRatio.value = ((sys as any).windowWidth || 375) / 750
   } catch { /* use default */ }
   startFlow()
 })
 
+function calcScrollHeight() {
+  const navH = statusBarHeight.value + 88 * rpxRatio.value
+  const inputH = (state.value === 'event' || state.value === 'thought') ? 54 : 0
+  scrollViewHeight.value = windowHeight.value - navH - inputH
+}
+
 function startFlow() {
   state.value = 'emotion'
+  calcScrollHeight()
 }
 
 function scrollToBottom() {
-  scrollKey.value++
+  // Increment scroll-top to a very large value; scroll-view clamps to max
+  scrollTopVal.value += 99999
 }
 
 function scrollNow() {
-  scrollKey.value++
+  scrollTopVal.value += 99999
 }
 
 // Auto-scroll on state or message changes (flush:'post' ensures DOM is ready)
 watch(
   () => [state.value, messages.value.length] as const,
-  () => scrollToBottom(),
+  () => {
+    calcScrollHeight()
+    scrollToBottom()
+  },
   { flush: 'post' }
 )
 
@@ -218,8 +233,9 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
     <!-- Messages -->
     <scroll-view
       class="qc-scroll"
+      :style="{ height: scrollViewHeight + 'px' }"
       scroll-y
-      :scroll-into-view="'qc-bottom-' + scrollKey"
+      :scroll-top="scrollTopVal"
       :scroll-with-animation="true"
       :enhanced="true"
       :show-scrollbar="false"
@@ -383,7 +399,6 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
           </view>
         </template>
 
-        <view :id="'qc-bottom-' + scrollKey" style="height:1rpx;"></view>
       </view>
     </scroll-view>
 
@@ -476,11 +491,10 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 
 /* ── Scroll ── */
 .qc-scroll {
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 0;
 }
 .qc-scroll-inner {
-  padding: 16rpx 0 32rpx;
+  padding: 16rpx 0 120rpx;
 }
 
 /* ── Message rows ── */

@@ -204,8 +204,17 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   <view class="qc-page" :style="{ height: windowHeight + 'px' }">
     <!-- Nav -->
     <view class="qc-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <text class="qc-nav-back" @tap="goHome">← 觉察</text>
-      <text class="qc-nav-title">看见此刻</text>
+      <view class="qc-nav-inner">
+        <view class="qc-nav-left" @tap="goHome">
+          <text class="qc-nav-back-icon">←</text>
+          <text class="qc-nav-back-label">觉察</text>
+        </view>
+        <view class="qc-nav-center">
+          <text class="qc-nav-title">看见此刻</text>
+        </view>
+        <view class="qc-nav-right">
+        </view>
+      </view>
     </view>
 
     <!-- Messages -->
@@ -414,25 +423,57 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 
 /* ── Nav ── */
 .qc-nav {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: #2A231D;
+  border-bottom: 1rpx solid rgba(255,255,255,.06);
+}
+.qc-nav-inner {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   height: 88rpx;
+  padding: 0 24rpx;
   position: relative;
-  flex-shrink: 0;
 }
-.qc-nav-back {
-  position: absolute;
-  left: 32rpx;
-  font-size: 30rpx;
+.qc-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  min-width: 120rpx;
+  z-index: 1;
+}
+.qc-nav-back-icon {
+  font-size: 36rpx;
   color: #C49A6C;
-  padding: 4rpx 8rpx;
+}
+.qc-nav-back-label {
+  font-size: 28rpx;
+  color: #C49A6C;
+}
+.qc-nav-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .qc-nav-title {
   font-size: 34rpx;
   font-weight: 600;
   color: #FDFBF7;
   letter-spacing: 4rpx;
+  white-space: nowrap;
+}
+.qc-nav-right {
+  min-width: 120rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 1;
 }
 
 /* ── Scroll ── */

@@ -363,3 +363,12 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
    MP-WEIXIN — styles in QuickChat component
    ============================================================= */
 </style>
+
+<!--#ifdef MP-WEIXIN-->
+<style lang="scss">
+page {
+  overflow: hidden;
+  height: 100%;
+}
+</style>
+<!--#endif-->

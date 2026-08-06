@@ -60,7 +60,7 @@ const form = reactive({
 })
 const aiResponse = ref('')
 const inputText = ref('')
-const scrollTop = ref(0)
+const scrollKey = ref(0)
 const saving = ref(false)
 
 const statusBarHeight = ref(20)
@@ -78,11 +78,11 @@ function startFlow() {
 }
 
 function scrollToBottom() {
-  setTimeout(() => { scrollTop.value = scrollTop.value + 99999 }, 80)
+  scrollKey.value++
 }
 
 function scrollNow() {
-  scrollTop.value = scrollTop.value + 99999
+  scrollKey.value++
 }
 
 let _msgId = 0
@@ -210,8 +210,10 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
     <scroll-view
       class="qc-scroll"
       scroll-y
-      :scroll-top="scrollTop"
+      :scroll-into-view="'qc-bottom-' + scrollKey"
       :scroll-with-animation="true"
+      :enhanced="true"
+      :show-scrollbar="false"
     >
       <view class="qc-scroll-inner">
         <!-- ═══ History messages ═══ -->
@@ -372,7 +374,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
           </view>
         </template>
 
-        <view style="height:16rpx;"></view>
+        <view :id="'qc-bottom-' + scrollKey" style="height:1rpx;"></view>
       </view>
     </scroll-view>
 

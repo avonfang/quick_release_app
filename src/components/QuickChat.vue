@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   quickAIResponse,
   saveQuickRecord,
@@ -82,16 +82,22 @@ const scrollHeight = computed(() => {
 
 function startFlow() {
   state.value = 'emotion'
-  nextTick(() => scrollToBottom())
 }
 
 function scrollToBottom() {
-  scrollKey.value++
+  setTimeout(() => { scrollKey.value++ }, 150)
 }
 
 function scrollNow() {
   scrollKey.value++
 }
+
+// Auto-scroll on state or message changes (flush:'post' ensures DOM is ready)
+watch(
+  () => [state.value, messages.value.length] as const,
+  () => scrollToBottom(),
+  { flush: 'post' }
+)
 
 let _msgId = 0
 function addMsg(role: 'ai' | 'user', content: string) {
@@ -105,7 +111,6 @@ function onSelectEmotion(emotion: string) {
   const emoji = QUICK_EMOTIONS.find(e => e.value === emotion)?.emoji || ''
   addMsg('user', `${emoji} ${emotion}`)
   state.value = 'intensity'
-  nextTick(() => scrollToBottom())
 }
 
 function onCustomEmotion() {
@@ -116,7 +121,6 @@ function onCustomEmotion() {
   addMsg('user', text)
   inputText.value = ''
   state.value = 'intensity'
-  nextTick(() => scrollToBottom())
 }
 
 function onSelectIntensity(v: number) {
@@ -125,7 +129,6 @@ function onSelectIntensity(v: number) {
   addMsg('ai', `嗯。这种${form.emotion}的感受，强度大概是？1 是很轻微，10 是非常强烈。`)
   addMsg('user', `强度 ${v}/10`)
   state.value = 'event'
-  nextTick(() => scrollToBottom())
 }
 
 function onSubmitEvent() {
@@ -136,7 +139,6 @@ function onSubmitEvent() {
   addMsg('user', text)
   inputText.value = ''
   state.value = 'thought'
-  nextTick(() => scrollToBottom())
 }
 
 function onSubmitThought() {
@@ -147,7 +149,6 @@ function onSubmitThought() {
   addMsg('user', `我注意到我在想：${text}`)
   inputText.value = ''
   state.value = 'factOrWorry'
-  nextTick(() => scrollToBottom())
 }
 
 async function onSelectFactWorry(fw: 'fact' | 'worry') {
@@ -157,7 +158,6 @@ async function onSelectFactWorry(fw: 'fact' | 'worry') {
   addMsg('user', fw === 'fact' ? '更像事实' : '更像一种担心')
   state.value = 'sending'
   saving.value = true
-  nextTick(() => scrollToBottom())
 
   try {
     const reply = await quickAIResponse(form.event, form.emotion, form.thought, fw)
@@ -179,7 +179,6 @@ async function onSelectFactWorry(fw: 'fact' | 'worry') {
   state.value = 'result'
   saving.value = false
   nextTick(() => {
-    scrollToBottom()
     twStart(aiResponse.value)
   })
 }
@@ -195,7 +194,6 @@ function resetFlow() {
   aiResponse.value = ''
   inputText.value = ''
   state.value = 'emotion'
-  nextTick(() => scrollToBottom())
 }
 
 function tapResultText() {

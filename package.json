@@ -96,6 +96,8 @@
     "@dcloudio/uni-cli-shared": "3.0.0-5000720260410001",
     "@dcloudio/uni-stacktracey": "3.0.0-5000720260410001",
     "@dcloudio/vite-plugin-uni": "3.0.0-5000720260410001",
+    "@swc/core": "^1.15.47",
+    "@swc/jest": "^0.2.39",
     "@vue/runtime-core": "^3.4.21",
     "rollup": "4.14.3",
     "sass": "^1.99.0",
@@ -103,8 +105,18 @@
     "vite": "5.2.8"
   },
   "jest": {
-    "setupFiles": ["./__tests__/setup.js"],
-    "testMatch": ["**/__tests__/**/*.test.js"],
-    "testPathIgnorePatterns": ["/.worktrees/", "/node_modules/"]
+    "setupFiles": [
+      "./__tests__/setup.js"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/.worktrees/",
+      "/node_modules/"
+    ],
+    "transform": {
+      "^.+\\.js$": "@swc/jest"
+    }
   }
 }

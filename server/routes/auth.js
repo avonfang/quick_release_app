@@ -177,6 +177,38 @@ router.post('/forgot-password', authLimiter, (req, res) => {
   }
 })
 
+// POST /api/auth/change-password (requires authentication)
+router.post('/change-password', require('../middleware/auth').authMiddleware, (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: '请输入当前密码和新密码' })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: '新密码至少6位' })
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.userId)
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' })
+    }
+
+    if (!bcrypt.compareSync(oldPassword, user.password_hash)) {
+      return res.status(401).json({ error: '当前密码错误' })
+    }
+
+    const hash = bcrypt.hashSync(newPassword, 10)
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.user.userId)
+
+    res.json({ message: '密码修改成功' })
+  } catch (err) {
+    console.error('change-password error:', err)
+    res.status(500).json({ error: '修改失败' })
+  }
+})
+
 // POST /api/auth/reset-password
 router.post('/reset-password', (req, res) => {
   try {

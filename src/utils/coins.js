@@ -1,7 +1,7 @@
 /**
  * Centralized coin tracking with ledger
  */
-function addCoins(amount, source) {
+export function addCoins(amount, source) {
   const coins = uni.getStorageSync('awakeningCoins') || 0
   uni.setStorageSync('awakeningCoins', coins + amount)
 
@@ -17,8 +17,6 @@ function addCoins(amount, source) {
   return coins + amount
 }
 
-function getLedger() {
+export function getLedger() {
   return uni.getStorageSync('coinLedger') || []
 }
-
-module.exports = { addCoins, getLedger }

@@ -47,7 +47,7 @@ defineProps<{
 
 .ai-bubble {
   max-width: 70%;
-  background-color: $bubble-ai;
+  background-color: var(--bg-bubble-ai, rgba(255, 255, 255, 0.08));
   border-radius: 16px;
   border-bottom-left-radius: 4px;
   padding: 22rpx 28rpx;
@@ -55,7 +55,7 @@ defineProps<{
 
 .ai-text {
   font-size: 28rpx;
-  color: $text-primary;
+  color: var(--text-primary, #FDFBF7);
   line-height: 1.7;
   word-break: break-word;
 }

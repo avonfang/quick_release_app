@@ -37,8 +37,8 @@ Component({
       if (idx === this.data.active) return
       this.setData({ active: idx })
 
-      uni.nextTick(() => {
-        uni.switchTab({ url: tab.pagePath })
+      wx.nextTick(() => {
+        wx.switchTab({ url: tab.pagePath })
       })
     }
   }

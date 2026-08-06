@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import * as courses from '@/data/courses'
+import courses from '@/data/courses'
 
 export default {
   data() {

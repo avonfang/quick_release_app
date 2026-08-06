@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { onBackPress, onHide, onShow } from '@dcloudio/uni-app'
 import { useSessionStore } from '@/stores/session'
 import { createSession, chatWithAI, saveCard } from '@/utils/cloud'
-import { isLoggedIn } from '@/utils/api'
+
 import { isSupported as isVoiceSupported, getState as getVoiceState, getDuration as getVoiceDuration, startRecording, stopRecording, onStateChange } from '@/utils/voice'
 
 import AiBubble from '@/components/AiBubble.vue'
@@ -13,6 +13,60 @@ const store = useSessionStore()
 const inputText = ref('')
 const isLoading = ref(false)
 const isInitializing = ref(true)
+
+// ─── Day/Night theme ───────────────────────────────────────────────────
+const isDark = ref(true)
+const themeVars = computed(() => {
+  if (isDark.value) {
+    return {
+      '--bg-primary': '#2A231D',
+      '--bg-nav': '#2A231D',
+      '--bg-input': 'rgba(255, 255, 255, 0.08)',
+      '--bg-bubble-ai': 'rgba(255, 255, 255, 0.08)',
+      '--text-primary': '#FDFBF7',
+      '--text-secondary': 'rgba(255, 255, 255, 0.4)',
+      '--text-placeholder': 'rgba(255, 255, 255, 0.3)',
+      '--border': 'rgba(255, 255, 255, 0.06)',
+      '--separator': 'rgba(255, 255, 255, 0.08)',
+      '--typing-dot': 'rgba(255, 255, 255, 0.3)',
+      '--send-btn': 'linear-gradient(135deg, #C69C6D, #B8885A)',
+    }
+  }
+  return {
+    '--bg-primary': '#F8F5F0',
+    '--bg-nav': '#F8F5F0',
+    '--bg-input': '#FFFFFF',
+    '--bg-bubble-ai': '#EDE8E0',
+    '--text-primary': '#1C1A17',
+    '--text-secondary': '#B8AFA4',
+    '--text-placeholder': '#C4B8AC',
+    '--border': 'rgba(0, 0, 0, 0.05)',
+    '--separator': '#E8DDD0',
+    '--typing-dot': '#B8AFA4',
+    '--send-btn': 'linear-gradient(135deg, #C49A6C, #B8885A)',
+  }
+})
+
+function updateTheme() {
+  const hour = new Date().getHours()
+  isDark.value = hour < 6 || hour >= 18
+}
+
+const pageStyle = computed(() => ({
+  ...themeVars.value,
+  height: windowHeight.value + 'px',
+}))
+
+const navBarStyle = computed(() => {
+  const style: Record<string, string> = {
+    paddingTop: (statusBarHeight.value || 20) + 'px',
+  }
+  if (navRightPadding.value) {
+    style.paddingRight = navRightPadding.value + 'rpx'
+  }
+  return style
+})
+
 const isComposing = ref(false) // iOS IME composition state
 const scrollToId = ref('')
 const scrollRef = ref<HTMLElement | null>(null)
@@ -22,6 +76,27 @@ const confirmTime = ref(0)
 const textareaWidth = ref('auto')
 const h5TextareaRef = ref<HTMLElement | null>(null)
 const showTextarea = ref(true)
+const statusBarHeight = ref(0)
+const windowHeight = ref(0)
+const chatInput = ref('')
+const scrollTarget = ref('')
+const isStreaming = ref(false)
+const streamingContent = ref('')
+const streamingDone = ref(false)
+let streamTimer: ReturnType<typeof setTimeout> | null = null
+
+// ─── Stage labels ───────────────────────────────────────────────────────
+const stageLabels: Record<string, string> = {
+  event: '事件',
+  emotion: '情绪',
+  thought: '自动想法',
+  belief: '信念',
+  loosen: '松动',
+  release: '释放',
+  awareness: '觉察',
+  action: '行动',
+}
+const stageOrder = ['event', 'emotion', 'thought', 'belief', 'loosen', 'release', 'awareness', 'action']
 
 // ─── Generation control ────────────────────────────────────────────────
 let chatGenerator: { abort: () => void } | null = null
@@ -72,18 +147,6 @@ function calculateTextareaWidth() {
   //#endif
 }
 
-// ─── Stage display labels ──────────────────────────────────────────────────
-const stageLabels: Record<string, string> = {
-  event: '事件',
-  emotion: '情绪',
-  thought: '自动想法',
-  belief: '信念',
-  loosen: '松动',
-  release: '释放',
-  awareness: '觉察',
-  action: '行动',
-}
-
 // ─── Fallback messages ─────────────────────────────────────────────────────
 const fallbackMessages: Record<string, string> = {
   event: '我听到了。当时具体发生了什么，能跟我说说吗？',
@@ -96,37 +159,108 @@ const fallbackMessages: Record<string, string> = {
   action: '在这个新的视角下，下一步最小的行动是什么？',
 }
 
-// ─── Computed: Insert stage separators between stage transitions ──────────
+// ─── Computed: Messages ───────────────────────────────────────────────────
 const displayMessages = computed(() => {
-  const items: Array<{
-    type: string
-    stage?: string
-    label?: string
-    msg?: any
-    role?: string
-  }> = []
-
-  let lastStage: string | null = null
-
-  for (const msg of store.messages) {
-    if (msg.stage !== lastStage) {
-      items.push({
-        type: 'separator',
-        stage: msg.stage,
-        label: stageLabels[msg.stage] || msg.stage,
-        role: '', // safe default — separator will never match 'assistant'
-      })
-      lastStage = msg.stage
-    }
-    items.push({
-      type: 'message',
-      msg,
-      role: msg.role || '',
-    })
-  }
-
-  return items
+  return store.messages.map((msg: any) => ({
+    type: 'message',
+    msg,
+    role: msg.role || '',
+  }))
 })
+
+// ─── Journal: current step for nav ────────────────────────────────────
+const currentStep = computed(() => {
+  const idx = stageOrder.indexOf(store.stage)
+  return idx >= 0 ? idx + 1 : 1
+})
+
+// ─── Streaming: character-by-character reveal ─────────────────────────
+function startStreaming(fullText: string, stage: string) {
+  if (streamTimer) clearInterval(streamTimer)
+  streamingContent.value = ''
+  streamingDone.value = false
+  isStreaming.value = true
+
+  let i = 0
+  const chars = [...fullText] // handle emoji / CJK properly
+  streamTimer = setInterval(() => {
+    if (i >= chars.length) {
+      clearInterval(streamTimer!)
+      streamTimer = null
+      streamingDone.value = true
+      isStreaming.value = false
+      // Add to store once streaming finishes
+      store.addMessage({ role: 'assistant', content: fullText, stage })
+      streamingContent.value = ''
+      return
+    }
+    // Reveal 2-4 chars per tick for natural feel
+    const chunk = chars.slice(i, i + 3).join('')
+    streamingContent.value += chunk
+    i += 3
+    scrollToBottom()
+  }, 30)
+}
+
+function cancelStreaming() {
+  if (streamTimer) clearInterval(streamTimer)
+  streamTimer = null
+  isStreaming.value = false
+  streamingContent.value = ''
+  streamingDone.value = false
+}
+
+// ─── Streaming: submit message ────────────────────────────────────────
+async function submitChatMessage() {
+  const text = chatInput.value.trim()
+  if (!text || isLoading.value || isStreaming.value) return
+
+  chatInput.value = ''
+  const stage = store.stage
+
+  store.addMessage({ role: 'user', content: text, stage })
+  captureStageData(stage, text)
+  isLoading.value = true
+  await nextTick()
+  scrollToBottom()
+
+  try {
+    const history = store.messages.map(m => ({ role: m.role, content: m.content }))
+    const { promise, abort } = chatWithAI(stage, text, history)
+    chatGenerator = { abort }
+
+    const reply = await promise
+    chatGenerator = null
+    isLoading.value = false
+
+    const cleanReply = reply.split('\n').filter((l: string) => !l.includes('【信念】')).join('\n').replace('【过渡】', '').trim()
+
+    // Start character-by-character reveal
+    startStreaming(cleanReply, stage)
+
+    if (reply.includes('【过渡】')) {
+      store.advanceStage()
+    } else if (stage === 'event' && userMsgCount('event') >= 2) {
+      store.advanceStage()
+    }
+    fallbackExchanges.value[stage] = 0
+  } catch (e: any) {
+    chatGenerator = null
+    isLoading.value = false
+    if (e?.name === 'AbortError') return
+
+    const count = (fallbackExchanges.value[stage] || 0) + 1
+    fallbackExchanges.value[stage] = count
+    let reply = fallbackMessages[stage] || '请继续说说你的感受。'
+    if (count >= 2) {
+      fallbackExchanges.value[stage] = 0
+      reply += '\n\n【过渡】'
+    }
+    const cleanReply = reply.replace('【过渡】', '').trim()
+    startStreaming(cleanReply, stage)
+    if (reply.includes('【过渡】')) store.advanceStage()
+  }
+}
 
 // ─── Watch: Save and navigate to card page on completion ────────────
 watch(
@@ -249,6 +383,7 @@ async function loadSession(sessionId: string) {
     return
   } finally {
     isInitializing.value = false
+    buildJournalEntries()
     nextTick(() => {
       scrollToBottom()
       calculateTextareaWidth()
@@ -419,23 +554,42 @@ async function sendMessage() {
   }
 }
 
+// ─── Streaming: skip ─────────────────────────────────────────────────
+function skipQuestion() {
+  if (isLoading.value || isStreaming.value) return
+  const stage = store.stage
+  store.addMessage({ role: 'user', content: '（跳过）', stage })
+  const reply = fallbackMessages[stage] || '好的，我们继续。'
+  startStreaming(reply, stage)
+  store.advanceStage()
+}
+
 /** 停止 AI 生成并撤回上一条消息 */
 function stopGeneration() {
-  if (!chatGenerator || !isLoading.value) return
-  chatGenerator.abort()
-  chatGenerator = null
+  // Stop API call if in progress
+  if (chatGenerator && isLoading.value) {
+    chatGenerator.abort()
+    chatGenerator = null
 
-  // 撤回最后一条用户消息
-  const msgs = store.messages
-  if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') {
-    msgs.pop()
+    const msgs = store.messages
+    if (msgs.length > 0 && msgs[msgs.length - 1].role === 'user') {
+      msgs.pop()
+    }
+    inputText.value = lastSentText
+    lastSentText = ''
+    isLoading.value = false
+    return
   }
 
-  // 恢复输入框内容
-  inputText.value = lastSentText
-  lastSentText = ''
-
-  isLoading.value = false
+  // Stop streaming reveal
+  if (isStreaming.value) {
+    cancelStreaming()
+    // Save whatever was streamed so far to store
+    if (streamingContent.value) {
+      store.addMessage({ role: 'assistant', content: streamingContent.value, stage: store.stage })
+    }
+    streamingContent.value = ''
+  }
 }
 
 // 修改：H5 用 @compositionstart/@compositionend，MP 不需要
@@ -566,12 +720,15 @@ function calcNavRightPadding() {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────
 onMounted(() => {
-  if (!isLoggedIn()) {
-    uni.reLaunch({ url: '/pages/auth/index' })
-    return
-  }
+  updateTheme()
   calcNavRightPadding()
   calculateTextareaWidth()
+
+  //#ifdef MP-WEIXIN
+  const sys = uni.getSystemInfoSync()
+  statusBarHeight.value = sys.statusBarHeight || 0
+  windowHeight.value = sys.windowHeight || 0
+  //#endif
 
   const sid = uni.getStorageSync('resumeSessionId')
   if (sid) {
@@ -583,8 +740,13 @@ onMounted(() => {
   initSession()
 })
 
+onBeforeUnmount(() => {
+  cancelStreaming()
+})
+
 // 从历史列表恢复会话（页面已挂载时 switchTab 触发）
 onShow(() => {
+  updateTheme()
   const sid = uni.getStorageSync('resumeSessionId')
   if (sid) {
     uni.removeStorageSync('resumeSessionId')
@@ -598,6 +760,7 @@ onBackPress(() => {
     chatGenerator.abort()
     chatGenerator = null
   }
+  cancelStreaming()
   if (hasContent()) {
     saveCurrentCard('in_progress')
   }
@@ -647,11 +810,9 @@ onBackPress(() => {
           <view
             v-if="item.type === 'separator'"
             :id="'sep-' + item.stage"
-            class="h5-stage"
+            class="h5-stage-tag"
           >
-            <view class="h5-stage-line"></view>
-            <text class="h5-stage-text">{{ item.label }}</text>
-            <view class="h5-stage-line"></view>
+            <text class="h5-stage-tag-text">{{ item.label }}</text>
           </view>
 
           <!-- AI Message -->
@@ -742,112 +903,122 @@ onBackPress(() => {
 <!--#endif-->
 
   <!-- ============================================================
-       MP-WEIXIN — send button outside input-wrap
+       MP-WEIXIN — Streaming Chat Bubbles
        ============================================================ -->
   <!--#ifdef MP-WEIXIN-->
-  <view class="page">
-    <view class="nav-bar" :style="navRightPadding ? 'padding-right:' + navRightPadding + 'rpx' : ''">
+  <view class="page" :style="pageStyle">
+    <view class="nav-bar" :style="navBarStyle">
       <view class="nav-btn nav-btn-left" @tap="goBack">
         <text class="nav-back-icon">←</text>
         <text class="nav-back-label">返回</text>
       </view>
       <text class="nav-title">一次觉察</text>
-      <view class="nav-btn nav-btn-right"></view>
+      <view class="nav-btn nav-btn-right">
+        <text class="nav-step-hint">{{ currentStep }}/8</text>
+      </view>
+    </view>
+
+    <!-- Progress dots -->
+    <view class="progress-bar">
+      <view
+        v-for="i in 8"
+        :key="i"
+        class="prog-dot"
+        :class="{ active: i === currentStep, done: i < currentStep }"
+      ></view>
     </view>
 
     <view v-if="isInitializing" class="loading-screen">
       <text class="loading-text">正在准备...</text>
     </view>
 
+    <!-- Chat messages -->
     <scroll-view
       v-else
-      class="messages-container"
+      class="chat-scroll"
       scroll-y
-      :scroll-into-view="'sb-' + scrollKey"
       :scroll-with-animation="true"
-      :lower-threshold="50"
+      :scroll-into-view="'msg-bottom-' + scrollKey"
+      :enhanced="true"
+      :show-scrollbar="false"
     >
-      <view class="messages-padding-top" />
+      <view class="chat-pad-top"></view>
 
+      <!-- Messages -->
       <template v-for="(item, idx) in displayMessages" :key="idx">
-        <view
-          v-if="item.type === 'separator'"
-          :id="'sep-' + item.stage"
-          class="stage-separator"
-        >
-          <view class="separator-line" />
-          <text class="separator-text">—— {{ item.label }} ——</text>
-          <view class="separator-line" />
+        <!-- AI Message -->
+        <view v-if="item.role === 'assistant'" class="msg-row msg-row--ai">
+          <AiBubble :content="item.msg.content" :timestamp="item.msg.timestamp" />
         </view>
 
-        <AiBubble
-          v-else-if="item.role === 'assistant'"
-          :id="'msg-' + item.msg.id"
-          :content="item.msg.content"
-        />
-
-        <UserBubble
-          v-else
-          :id="'msg-' + item.msg.id"
-          :content="item.msg.content"
-        />
+        <!-- User Message -->
+        <view v-else class="msg-row msg-row--user">
+          <UserBubble :content="item.msg.content" :stage="item.msg.stage" />
+        </view>
       </template>
 
-      <view v-if="isLoading" class="typing-indicator">
-        <view class="typing-bubble">
-          <view class="typing-dot" />
-          <view class="typing-dot" />
-          <view class="typing-dot" />
+      <!-- Typing indicator (waiting for API) -->
+      <view v-if="isLoading && !isStreaming" class="msg-row msg-row--ai">
+        <view class="stream-bubble">
+          <view class="stream-dots">
+            <view class="stream-dot"></view>
+            <view class="stream-dot"></view>
+            <view class="stream-dot"></view>
+          </view>
         </view>
       </view>
 
-      <view class="messages-padding-bottom" />
-      <view :id="'sb-' + scrollKey" class="scroll-anchor" />
+      <!-- Streaming bubble (active character reveal) -->
+      <view v-if="isStreaming" class="msg-row msg-row--ai">
+        <view class="stream-bubble">
+          <text class="stream-text">{{ streamingContent }}</text>
+          <text class="stream-cursor" v-if="!streamingDone">|</text>
+        </view>
+      </view>
+
+      <view class="chat-pad-bottom"></view>
+      <view :id="'msg-bottom-' + scrollKey" class="scroll-anchor"></view>
     </scroll-view>
 
-    <view class="input-area" :class="{ 'input-area-hidden': isInitializing }">
-      <view
-        v-if="voiceSupported"
-        class="voice-btn"
-        :class="{
-          'voice-btn--recording': voiceState === 'recording',
-          'voice-btn--busy': voiceState === 'transcribing',
-        }"
-        @tap="toggleVoice"
-      >
-        <view class="voice-btn-mic">
-          <view class="voice-btn-mic-body" :class="{ 'voice-btn-mic-body--active': voiceState === 'recording' }" />
-          <view class="voice-btn-mic-stand" :class="{ 'voice-btn-mic-stand--active': voiceState === 'recording' }" />
-        </view>
-        <text v-if="voiceState === 'recording'" class="voice-duration">{{ voiceDuration }}″</text>
-      </view>
+    <!-- Input area -->
+    <view class="input-bar">
       <view class="input-wrap">
         <textarea
-          v-if="showTextarea"
+          v-model="chatInput"
           class="chat-input"
-          placeholder="写下你的感受…"
-          placeholder-class="input-placeholder"
-          :disabled="isLoading || isInitializing"
-          :style="{ width: textareaWidth }"
-          :maxlength="-1"
+          placeholder="写下你的感受..."
+          placeholder-class="chat-input-ph"
+          :disabled="isLoading || isStreaming"
+          :cursor-spacing="12"
+          :adjust-position="true"
+          :hold-keyboard="true"
           auto-height
-          @input="onMpInput"
+          @confirm="submitChatMessage"
         />
       </view>
-      <view
-        v-if="isLoading"
-        class="send-btn stop-btn"
-        @tap="stopGeneration"
-      >
-        <text class="send-icon">■</text>
-      </view>
-      <view
-        v-else
-        class="send-btn"
-        :class="{ disabled: !inputText.trim() || isLoading || isInitializing }"
-        @tap="sendMessage"
-      >
-        <text class="send-icon">⟶</text>
+      <view class="input-right">
+        <view
+          v-if="isLoading || isStreaming"
+          class="send-btn send-btn--stop"
+          @tap="stopGeneration"
+        >
+          <text class="send-icon stop-icon">■</text>
+        </view>
+        <view
+          v-else
+          class="send-btn"
+          :class="{ 'send-btn--off': !chatInput.trim() }"
+          @tap="submitChatMessage"
+        >
+          <text class="send-icon">↑</text>
+        </view>
+        <view
+          class="skip-link"
+          :class="{ 'skip-link--off': isLoading || isStreaming }"
+          @tap="skipQuestion"
+        >
+          <text class="skip-text">跳过</text>
+        </view>
       </view>
     </view>
   </view>
@@ -987,27 +1158,17 @@ onBackPress(() => {
 .h5-scroll-pad-top { height: 20px; }
 .h5-scroll-pad-bottom { height: 180px; }
 
-/* ── Stage separator ── */
-.h5-stage {
+/* ── Stage tag ── */
+.h5-stage-tag {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 40px 0 28px;
+  padding: 32px 0 16px;
 }
 
-.h5-stage-line {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #D4C8B8, transparent);
-  flex: 1;
-  max-width: 80px;
-}
-
-.h5-stage-text {
+.h5-stage-tag-text {
   font-size: 11px;
   color: #B8AFA4;
-  letter-spacing: 3px;
-  white-space: nowrap;
+  letter-spacing: 2px;
   font-weight: 500;
 }
 
@@ -1324,14 +1485,13 @@ onBackPress(() => {
 /*#endif*/
 
 /* =============================================================
-   MP-WEIXIN — original styles (unchanged)
+   MP-WEIXIN — Streaming Chat Bubbles
    ============================================================= */
 /*#ifdef MP-WEIXIN*/
 .page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: $bg-color;
+  background-color: var(--bg-primary);
   overflow: hidden;
 }
 
@@ -1341,12 +1501,11 @@ onBackPress(() => {
   align-items: center;
   justify-content: space-between;
   position: relative;
-  height: 120rpx;
   padding-left: 20rpx;
-  padding-top: calc(var(--status-bar-height, 0px) + 30rpx);
-  background-color: $bg-color;
+  padding-bottom: 10rpx;
+  background-color: var(--bg-nav);
   flex-shrink: 0;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1rpx solid var(--border);
 }
 
 .nav-btn {
@@ -1356,23 +1515,18 @@ onBackPress(() => {
   min-width: 100rpx;
 }
 
-.nav-btn-left {
-  justify-content: flex-start;
-}
-
-.nav-btn-right {
-  justify-content: flex-end;
-}
+.nav-btn-left { justify-content: flex-start; }
+.nav-btn-right { justify-content: flex-end; }
 
 .nav-back-icon {
   font-size: 38rpx;
-  color: $text-primary;
+  color: var(--text-primary);
   margin-right: 8rpx;
 }
 
 .nav-back-label {
   font-size: 32rpx;
-  color: $text-primary;
+  color: var(--text-primary);
 }
 
 .nav-title {
@@ -1381,15 +1535,41 @@ onBackPress(() => {
   transform: translateX(-50%);
   font-size: 36rpx;
   font-weight: 600;
-  color: $text-primary;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
-.nav-end-label {
-  font-size: 30rpx;
-  color: #B85A48;
-  font-weight: 500;
-  padding: 10rpx 16rpx;
+.nav-step-hint {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  letter-spacing: 2rpx;
+}
+
+/* ── Progress Dots ─────────────────────────────────────────────────────── */
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 16rpx 0;
+  flex-shrink: 0;
+}
+
+.prog-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  transition: all 0.3s;
+}
+
+.prog-dot.active {
+  background: #C69C6D;
+  box-shadow: 0 0 0 6rpx rgba(198, 156, 109, 0.15);
+}
+
+.prog-dot.done {
+  background: #C69C6D;
+  opacity: 0.5;
 }
 
 /* ── Loading Screen ─────────────────────────────────────────────────────── */
@@ -1402,257 +1582,173 @@ onBackPress(() => {
 
 .loading-text {
   font-size: 28rpx;
-  color: $text-light;
+  color: var(--text-secondary);
 }
 
-/* ── Messages Container ─────────────────────────────────────────────────── */
-.messages-container {
+/* ── Chat Scroll ────────────────────────────────────────────────────────── */
+.chat-scroll {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 0 24rpx;
 }
 
-.messages-padding-top {
-  height: 20rpx;
-}
+.chat-pad-top { height: 20rpx; }
+.chat-pad-bottom { height: 20rpx; }
 
-/* ── Stage Separator ────────────────────────────────────────────────────── */
-.stage-separator {
+/* ── Message Rows ──────────────────────────────────────────────────────── */
+.msg-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 30rpx 30rpx;
+  margin-bottom: 20rpx;
 }
 
-.separator-line {
-  flex: 1;
-  height: 1rpx;
-  background-color: $divider;
-  max-width: 60rpx;
-}
-
-.separator-text {
-  font-size: 22rpx;
-  color: $text-light;
-  margin: 0 20rpx;
-  white-space: nowrap;
-  letter-spacing: 2rpx;
-}
-
-/* ── AI Typing Indicator ────────────────────────────────────────────────── */
-.typing-indicator {
-  display: flex;
+.msg-row--ai {
   justify-content: flex-start;
-  padding: 0 30rpx;
-  margin-bottom: 24rpx;
 }
 
-.typing-bubble {
+.msg-row--user {
+  justify-content: flex-end;
+}
+
+/* ── Streaming Bubble ─────────────────────────────────────────────────── */
+.stream-bubble {
+  max-width: 580rpx;
+  background: var(--bg-bubble-ai);
+  border-radius: 4rpx 24rpx 24rpx 24rpx;
+  padding: 22rpx 28rpx;
+}
+
+.stream-dots {
   display: flex;
-  align-items: center;
-  background-color: $bubble-ai;
-  border-radius: 16px;
-  border-bottom-left-radius: 4px;
-  padding: 26rpx 32rpx;
-  gap: 8rpx;
+  gap: 10rpx;
+  padding: 8rpx 0;
 }
 
-.typing-dot {
-  width: 12rpx;
-  height: 12rpx;
+.stream-dot {
+  width: 10rpx;
+  height: 10rpx;
   border-radius: 50%;
-  background-color: $text-light;
-  animation: typingBounce 1.4s ease-in-out infinite;
+  background: var(--typing-dot);
+  animation: streamDotBounce 1.4s ease-in-out infinite;
 }
 
-.typing-dot:nth-child(1) {
-  animation-delay: 0s;
+.stream-dot:nth-child(1) { animation-delay: 0s; }
+.stream-dot:nth-child(2) { animation-delay: 0.2s; }
+.stream-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes streamDotBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-8rpx); opacity: 1; }
 }
 
-.typing-dot:nth-child(2) {
-  animation-delay: 0.2s;
+.stream-text {
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 
-.typing-dot:nth-child(3) {
-  animation-delay: 0.4s;
+.stream-cursor {
+  font-size: 28rpx;
+  color: #C69C6D;
+  font-weight: 300;
+  animation: cursorBlink 0.7s ease-in-out infinite;
 }
 
-@keyframes typingBounce {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.4;
-  }
-  30% {
-    transform: translateY(-10rpx);
-    opacity: 1;
-  }
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
-/* ── Input Area ── redesigned: matching H5 aesthetic ─────────────── */
-.input-area {
+/* ── Input Bar ─────────────────────────────────────────────────────────── */
+.input-bar {
   flex-shrink: 0;
   display: flex;
-  flex-direction: row;
   align-items: flex-end;
-  gap: 16rpx;
+  gap: 12rpx;
   padding: 12rpx 24rpx;
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom, 0px));
-  background-color: $bg-color;
-  border-top: 1rpx solid rgba(0, 0, 0, 0.04);
-}
-
-.input-area-hidden {
-  display: none;
+  background: var(--bg-primary);
+  border-top: 1rpx solid var(--border);
 }
 
 .input-wrap {
   flex: 1;
-  position: relative;
-  background-color: #FFFFFF;
-  border-radius: 16px;
+  background: var(--bg-input);
+  border-radius: 20rpx;
   padding: 14rpx 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(28, 26, 23, 0.04);
 }
 
 .chat-input {
   display: block;
   width: 100%;
   font-size: 28rpx;
-  color: $text-primary;
+  color: var(--text-primary);
   background: transparent;
   border: none;
   outline: none;
   resize: none;
   font-family: inherit;
-  line-height: 1.7;
-  white-space: pre-wrap;
+  line-height: 1.6;
 }
 
-.input-placeholder {
-  color: $text-light;
+.chat-input-ph {
+  color: var(--text-placeholder);
   font-size: 28rpx;
 }
 
-.send-btn {
+.input-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
   flex-shrink: 0;
-  width: 72rpx;
-  height: 72rpx;
+}
+
+.send-btn {
+  width: 68rpx;
+  height: 68rpx;
   border-radius: 50%;
-  background: $primary-gradient;
+  background: var(--send-btn);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: opacity 0.2s;
 }
 
-.send-btn.disabled {
-  opacity: 0.35;
+.send-btn--off {
+  opacity: 0.3;
 }
 
-.stop-btn {
+.send-btn--stop {
   background: #D4604A;
 }
-.stop-btn:active { opacity: 0.8; }
 
 .send-icon {
   font-size: 28rpx;
-  color: #ffffff;
+  color: #fff;
   font-weight: 300;
 }
 
-.voice-btn {
-  flex-shrink: 0;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: #F0ECE6;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  position: relative;
+.stop-icon {
+  font-size: 22rpx;
 }
-.voice-btn:active { background: #E0D8CC; }
 
-.voice-btn--recording {
-  background: #E84F4F;
-  animation: voicePulse 1s ease-in-out infinite;
+.skip-link {
+  padding: 2rpx 0;
 }
-.voice-btn--busy {
-  background: #D4C8B8;
+
+.skip-link--off {
+  opacity: 0.25;
   pointer-events: none;
 }
 
-/* CSS 绘制麦克风图标 */
-.voice-btn-mic {
-  width: 36rpx;
-  height: 36rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+.skip-text {
+  font-size: 20rpx;
+  color: var(--text-secondary);
 }
 
-.voice-btn-mic-body {
-  width: 16rpx;
-  height: 24rpx;
-  border: 3rpx solid #5A4E42;
-  border-radius: 8rpx;
-  position: relative;
-  margin-bottom: 4rpx;
-}
-.voice-btn-mic-body--active {
-  border-color: #FFFFFF;
-}
-
-.voice-btn-mic-stand {
-  width: 22rpx;
-  height: 4rpx;
-  border-top: 3rpx solid #5A4E42;
-  border-radius: 2rpx;
-  position: relative;
-}
-.voice-btn-mic-stand::after {
-  content: '';
-  position: absolute;
-  bottom: -8rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18rpx;
-  height: 10rpx;
-  border: 3rpx solid #5A4E42;
-  border-top: none;
-  border-radius: 0 0 10rpx 10rpx;
-}
-.voice-btn-mic-stand--active {
-  border-color: #FFFFFF;
-}
-.voice-btn-mic-stand--active::after {
-  border-color: #FFFFFF;
-}
-
-.voice-duration {
-  position: absolute;
-  left: 76rpx;
-  font-size: 22rpx;
-  color: #E84F4F;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-@keyframes voicePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
-}
-
-
-.messages-padding-bottom {
-  height: 160rpx;
-}
-
+/* ── Scroll Anchor ─────────────────────────────────────────────────────── */
 .scroll-anchor {
   height: 1rpx;
 }

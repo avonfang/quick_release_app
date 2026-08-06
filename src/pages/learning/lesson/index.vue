@@ -55,7 +55,7 @@
 </template>
 
 <script>
-import * as courses from '@/data/courses'
+import courses from '@/data/courses'
 import * as util from '@/utils/util'
 
 export default {

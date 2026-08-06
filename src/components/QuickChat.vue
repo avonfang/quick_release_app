@@ -1,0 +1,662 @@
+<script setup lang="ts">
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import {
+  quickAIResponse,
+  saveQuickRecord,
+  QUICK_EMOTIONS,
+} from '@/utils/quick-record'
+import type { QuickRecord } from '@/utils/quick-record'
+
+// ── Inline typewriter ──
+const displayed = ref('')
+const isTyping = ref(false)
+let _twTimer: ReturnType<typeof setInterval> | null = null
+
+function twStart(text: string) {
+  twStop()
+  displayed.value = ''
+  isTyping.value = true
+  let i = 0
+  const chars = [...text]
+  _twTimer = setInterval(() => {
+    if (i < chars.length) {
+      displayed.value += chars[i]
+      i++
+    } else {
+      twStop()
+    }
+  }, 40)
+}
+
+function twStop() {
+  if (_twTimer) { clearInterval(_twTimer); _twTimer = null }
+  isTyping.value = false
+}
+
+function twComplete(text: string) {
+  twStop()
+  displayed.value = text
+}
+
+onBeforeUnmount(twStop)
+
+type State = 'idle' | 'emotion' | 'intensity' | 'event' | 'thought' | 'factOrWorry' | 'sending' | 'result'
+
+interface Message {
+  id: number
+  role: 'ai' | 'user'
+  content: string
+}
+
+const state = ref<State>('idle')
+const messages = ref<Message[]>([])
+const form = reactive({
+  emotion: '',
+  intensity: 5,
+  event: '',
+  thought: '',
+  factOrWorry: '' as 'fact' | 'worry' | '',
+})
+const aiResponse = ref('')
+const inputText = ref('')
+const scrollTop = ref(0)
+const saving = ref(false)
+
+const statusBarHeight = ref(20)
+onMounted(() => {
+  try {
+    const sys = uni.getSystemInfoSync()
+    statusBarHeight.value = (sys as any).statusBarHeight || 20
+  } catch { /* use default */ }
+  startFlow()
+})
+
+function startFlow() {
+  state.value = 'emotion'
+  nextTick(() => scrollToBottom())
+}
+
+function scrollToBottom() {
+  nextTick(() => { scrollTop.value = scrollTop.value + 99999 })
+}
+
+let _msgId = 0
+function addMsg(role: 'ai' | 'user', content: string) {
+  messages.value.push({ id: ++_msgId, role, content })
+}
+
+function onSelectEmotion(emotion: string) {
+  if (state.value !== 'emotion') return
+  form.emotion = emotion
+  addMsg('ai', '嗨，你现在感觉怎么样？选一个最贴近此刻心情的吧')
+  const emoji = QUICK_EMOTIONS.find(e => e.value === emotion)?.emoji || ''
+  addMsg('user', `${emoji} ${emotion}`)
+  state.value = 'intensity'
+  nextTick(() => scrollToBottom())
+}
+
+function onSelectIntensity(v: number) {
+  if (state.value !== 'intensity') return
+  form.intensity = v
+  addMsg('ai', `嗯。这种${form.emotion}的感受，强度大概是？1 是很轻微，10 是非常强烈。`)
+  addMsg('user', `强度 ${v}/10`)
+  state.value = 'event'
+  nextTick(() => scrollToBottom())
+}
+
+function onSubmitEvent() {
+  const text = inputText.value.trim()
+  if (!text || state.value !== 'event') return
+  form.event = text
+  addMsg('ai', '今天发生了什么，让你有这种感觉？')
+  addMsg('user', text)
+  inputText.value = ''
+  state.value = 'thought'
+  nextTick(() => scrollToBottom())
+}
+
+function onSubmitThought() {
+  const text = inputText.value.trim()
+  if (!text || state.value !== 'thought') return
+  form.thought = text
+  addMsg('ai', '当这件事发生的时候，你脑子里出现了什么想法？试着用「我注意到我在想...」来表达。')
+  addMsg('user', `我注意到我在想：${text}`)
+  inputText.value = ''
+  state.value = 'factOrWorry'
+  nextTick(() => scrollToBottom())
+}
+
+async function onSelectFactWorry(fw: 'fact' | 'worry') {
+  if (state.value !== 'factOrWorry' || saving.value) return
+  form.factOrWorry = fw
+  addMsg('ai', '这个想法——它更像一件事实，还是更像一种担心？')
+  addMsg('user', fw === 'fact' ? '更像事实' : '更像一种担心')
+  state.value = 'sending'
+  saving.value = true
+  nextTick(() => scrollToBottom())
+
+  try {
+    const reply = await quickAIResponse(form.event, form.emotion, form.thought, fw)
+    aiResponse.value = reply
+    saveQuickRecord({
+      id: 'q_' + Date.now(),
+      emotion: form.emotion,
+      intensity: form.intensity,
+      event: form.event,
+      thought: form.thought,
+      isFactOrWorry: fw,
+      timestamp: Date.now(),
+      aiResponse: reply,
+    })
+  } catch {
+    aiResponse.value = '谢谢你的记录。'
+  }
+
+  state.value = 'result'
+  saving.value = false
+  nextTick(() => {
+    scrollToBottom()
+    twStart(aiResponse.value)
+  })
+}
+
+function resetFlow() {
+  twStop()
+  messages.value = []
+  form.emotion = ''
+  form.intensity = 5
+  form.event = ''
+  form.thought = ''
+  form.factOrWorry = ''
+  aiResponse.value = ''
+  inputText.value = ''
+  state.value = 'emotion'
+  nextTick(() => scrollToBottom())
+}
+
+function tapResultText() {
+  if (isTyping.value) twComplete(aiResponse.value)
+}
+
+const goChat = () => uni.navigateTo({ url: '/pages/chat/index' })
+const goHome = () => uni.switchTab({ url: '/pages/index/index' })
+</script>
+
+<template>
+  <view class="qc-page">
+    <!-- Nav -->
+    <view class="qc-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <text class="qc-nav-back" @tap="goHome">← 觉察</text>
+      <text class="qc-nav-title">看见此刻</text>
+    </view>
+
+    <!-- Messages -->
+    <scroll-view
+      class="qc-scroll"
+      scroll-y
+      :scroll-top="scrollTop"
+      :scroll-with-animation="true"
+    >
+      <view class="qc-scroll-inner">
+        <!-- ═══ History messages ═══ -->
+        <template v-for="msg in messages" :key="msg.id">
+          <view v-if="msg.role === 'ai'" class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai">
+              <text class="qc-bubble-text">{{ msg.content }}</text>
+            </view>
+          </view>
+          <view v-else class="qc-msg qc-msg--user">
+            <view class="qc-bubble qc-bubble--user">
+              <text class="qc-bubble-text qc-bubble-text--user">{{ msg.content }}</text>
+            </view>
+          </view>
+        </template>
+
+        <!-- ═══ Current state ═══ -->
+
+        <!-- Emotion -->
+        <template v-if="state === 'emotion'">
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai">
+              <text class="qc-phase-tag">情绪觉察</text>
+              <text class="qc-bubble-text">嗨，你现在感觉怎么样？选一个最贴近此刻心情的吧</text>
+            </view>
+          </view>
+          <view class="qc-chips">
+            <view
+              v-for="e in QUICK_EMOTIONS"
+              :key="e.value"
+              class="qc-chip"
+              hover-class="qc-chip--hover"
+              @tap="onSelectEmotion(e.value)"
+            >
+              <text class="qc-chip-emoji">{{ e.emoji }}</text>
+              <text class="qc-chip-label">{{ e.label }}</text>
+            </view>
+          </view>
+        </template>
+
+        <!-- Intensity -->
+        <template v-if="state === 'intensity'">
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai">
+              <text class="qc-bubble-text">嗯。这种{{ form.emotion }}的感受，强度大概是？1 是很轻微，10 是非常强烈。</text>
+            </view>
+          </view>
+          <view class="qc-intensity">
+            <view
+              v-for="i in 10"
+              :key="i"
+              class="qc-intensity-dot"
+              :class="{ 'qc-intensity-dot--on': i <= form.intensity }"
+              hover-class="qc-intensity-dot--hover"
+              @tap="onSelectIntensity(i)"
+            >
+              <text class="qc-intensity-num" :class="{ 'qc-intensity-num--on': i <= form.intensity }">{{ i }}</text>
+            </view>
+          </view>
+        </template>
+
+        <!-- Event -->
+        <template v-if="state === 'event'">
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai">
+              <text class="qc-bubble-text">今天发生了什么，让你有这种感觉？</text>
+            </view>
+          </view>
+        </template>
+
+        <!-- Thought -->
+        <template v-if="state === 'thought'">
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai">
+              <text class="qc-bubble-text">当这件事发生的时候，你脑子里出现了什么想法？试着用「我注意到我在想...」来表达。</text>
+            </view>
+          </view>
+        </template>
+
+        <!-- Fact or Worry -->
+        <template v-if="state === 'factOrWorry'">
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai">
+              <text class="qc-bubble-text">这个想法——它更像一件事实，还是更像一种担心？</text>
+            </view>
+          </view>
+          <view class="qc-fw">
+            <view class="qc-fw-btn" hover-class="qc-fw-btn--hover" @tap="onSelectFactWorry('fact')">
+              <text class="qc-fw-icon">◎</text>
+              <text class="qc-fw-label">更像事实</text>
+              <text class="qc-fw-desc">有明确的证据支持</text>
+            </view>
+            <view class="qc-fw-btn" hover-class="qc-fw-btn--hover" @tap="onSelectFactWorry('worry')">
+              <text class="qc-fw-icon">○</text>
+              <text class="qc-fw-label">更像一种担心</text>
+              <text class="qc-fw-desc">更多是脑海中的假设</text>
+            </view>
+          </view>
+        </template>
+
+        <!-- Sending -->
+        <template v-if="state === 'sending'">
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-bubble qc-bubble--ai qc-bubble--loading">
+              <text class="qc-phase-tag">AI 回应</text>
+              <view class="qc-dots">
+                <view class="qc-dot"></view>
+                <view class="qc-dot"></view>
+                <view class="qc-dot"></view>
+              </view>
+            </view>
+          </view>
+        </template>
+
+        <!-- Result -->
+        <template v-if="state === 'result'">
+          <view class="qc-result">
+            <view class="qc-result-section">
+              <text class="qc-result-label">情绪</text>
+              <text class="qc-result-text">{{ form.emotion }} · {{ form.intensity }}/10</text>
+            </view>
+            <view class="qc-result-section">
+              <text class="qc-result-label">事件</text>
+              <text class="qc-result-text">{{ form.event }}</text>
+            </view>
+            <view class="qc-result-section">
+              <text class="qc-result-label">内心声音</text>
+              <text class="qc-result-text">我注意到我在想：{{ form.thought }}</text>
+            </view>
+            <view class="qc-result-divider"></view>
+            <text class="qc-result-ai" @tap="tapResultText">{{ displayed }}<text v-if="isTyping" class="qc-cursor">|</text></text>
+          </view>
+          <view class="qc-msg qc-msg--ai">
+            <view class="qc-retry" hover-class="qc-retry--hover" @tap="resetFlow">
+              <text class="qc-retry-text">再记一条</text>
+            </view>
+          </view>
+          <view class="qc-deep" hover-class="qc-deep--hover" @tap="goChat">
+            <text class="qc-deep-text">想深入探索？进行一次完整的觉察对话 →</text>
+          </view>
+        </template>
+
+        <view style="height:16rpx;"></view>
+      </view>
+    </scroll-view>
+
+    <!-- Fixed bottom input -->
+    <view v-if="state === 'event' || state === 'thought'" class="qc-input-bar">
+      <input
+        v-model="inputText"
+        class="qc-input"
+        :placeholder="state === 'event' ? '比如：下午开会时被突然点名...' : '比如：如果回答不上来大家会觉得我不行...'"
+        placeholder-class="qc-input-ph"
+        :focus="true"
+        cursor-spacing="24"
+        confirm-type="send"
+        @confirm="state === 'event' ? onSubmitEvent() : onSubmitThought()"
+      />
+      <view
+        class="qc-send"
+        :class="{ 'qc-send--ready': inputText.trim() }"
+        hover-class="qc-send--hover"
+        @tap="state === 'event' ? onSubmitEvent() : onSubmitThought()"
+      >
+        <text class="qc-send-text">发送</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<style scoped>
+.qc-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #2A231D;
+}
+
+/* ── Nav ── */
+.qc-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  position: relative;
+  flex-shrink: 0;
+}
+.qc-nav-back {
+  position: absolute;
+  left: 32rpx;
+  font-size: 30rpx;
+  color: #C49A6C;
+  padding: 4rpx 8rpx;
+}
+.qc-nav-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #FDFBF7;
+  letter-spacing: 4rpx;
+}
+
+/* ── Scroll ── */
+.qc-scroll {
+  flex: 1;
+}
+.qc-scroll-inner {
+  padding: 16rpx 0 32rpx;
+}
+
+/* ── Message rows ── */
+.qc-msg {
+  display: flex;
+  padding: 0 32rpx;
+  margin-bottom: 32rpx;
+}
+.qc-msg--ai { justify-content: flex-start; }
+.qc-msg--user { justify-content: flex-end; }
+
+/* ── Bubbles ── */
+.qc-bubble {
+  max-width: 82%;
+  padding: 24rpx 32rpx;
+  border-radius: 36rpx;
+}
+.qc-bubble--ai {
+  background: rgba(255,255,255,.08);
+  border-bottom-left-radius: 12rpx;
+}
+.qc-bubble--user {
+  background: linear-gradient(135deg, #C49A6C, #B8885A);
+  border-bottom-right-radius: 12rpx;
+}
+.qc-bubble--loading {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  min-width: 160rpx;
+}
+.qc-bubble-text {
+  font-size: 30rpx;
+  color: #FDFBF7;
+  line-height: 1.7;
+  word-break: break-word;
+}
+.qc-bubble-text--user {
+  color: #fff;
+}
+
+/* ── Phase tag in bubble ── */
+.qc-phase-tag {
+  display: block;
+  font-size: 20rpx;
+  color: rgba(255,255,255,.25);
+  letter-spacing: 2rpx;
+  margin-bottom: 8rpx;
+}
+
+/* ── Loading dots ── */
+.qc-dots {
+  display: flex;
+  gap: 12rpx;
+}
+.qc-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,.3);
+  animation: qcDotPulse 1.4s ease-in-out infinite;
+}
+.qc-dot:nth-child(2) { animation-delay: .2s; }
+.qc-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes qcDotPulse {
+  0%, 80%, 100% { opacity: .3; transform: scale(.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Emotion chips ── */
+.qc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 0 32rpx;
+  margin-bottom: 32rpx;
+}
+.qc-chip {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 20rpx 32rpx;
+  border-radius: 48rpx;
+  background: rgba(255,255,255,.06);
+  border: 2rpx solid rgba(255,255,255,.1);
+}
+.qc-chip--hover {
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.18);
+}
+.qc-chip-emoji { font-size: 36rpx; }
+.qc-chip-label { font-size: 28rpx; color: #FDFBF7; }
+
+/* ── Intensity bar ── */
+.qc-intensity {
+  display: flex;
+  gap: 8rpx;
+  padding: 0 32rpx;
+  margin-bottom: 32rpx;
+}
+.qc-intensity-dot {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 16rpx;
+  background: rgba(255,255,255,.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qc-intensity-dot--hover { background: rgba(255,255,255,.1); }
+.qc-intensity-dot--on { background: #C49A6C; }
+.qc-intensity-num {
+  font-size: 24rpx;
+  color: rgba(255,255,255,.3);
+  font-weight: 500;
+}
+.qc-intensity-num--on { color: #fff; }
+
+/* ── Fact / Worry buttons ── */
+.qc-fw {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 32rpx;
+  margin-bottom: 32rpx;
+}
+.qc-fw-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 36rpx 24rpx;
+  border-radius: 28rpx;
+  background: rgba(255,255,255,.05);
+  border: 2rpx solid rgba(255,255,255,.06);
+}
+.qc-fw-btn--hover {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(196,154,108,.2);
+}
+.qc-fw-icon { font-size: 44rpx; color: #C49A6C; }
+.qc-fw-label { font-size: 28rpx; color: #FDFBF7; font-weight: 500; }
+.qc-fw-desc { font-size: 22rpx; color: rgba(255,255,255,.25); }
+
+/* ── Result ── */
+.qc-result {
+  background: rgba(255,255,255,.04);
+  border: 2rpx solid rgba(255,255,255,.05);
+  border-radius: 28rpx;
+  padding: 32rpx;
+  margin: 0 32rpx 32rpx;
+}
+.qc-result-section { margin-bottom: 20rpx; }
+.qc-result-label {
+  display: block;
+  font-size: 20rpx;
+  color: rgba(255,255,255,.25);
+  letter-spacing: 2rpx;
+  margin-bottom: 8rpx;
+}
+.qc-result-text {
+  font-size: 26rpx;
+  color: #FDFBF7;
+  line-height: 1.6;
+}
+.qc-result-divider {
+  height: 2rpx;
+  background: rgba(255,255,255,.06);
+  margin: 28rpx 0;
+}
+.qc-result-ai {
+  font-size: 28rpx;
+  color: #FDFBF7;
+  line-height: 1.85;
+  display: block;
+}
+.qc-cursor {
+  color: #C49A6C;
+  animation: qcBlink .8s infinite;
+}
+@keyframes qcBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Retry ── */
+.qc-retry {
+  display: flex;
+  justify-content: center;
+  padding: 12rpx 0;
+}
+.qc-retry--hover { opacity: .7; }
+.qc-retry-text {
+  font-size: 28rpx;
+  color: #C49A6C;
+  font-weight: 500;
+}
+
+/* ── Deep link ── */
+.qc-deep {
+  display: flex;
+  justify-content: center;
+  padding: 20rpx 0 48rpx;
+}
+.qc-deep--hover { opacity: .7; }
+.qc-deep-text {
+  font-size: 26rpx;
+  color: rgba(255,255,255,.2);
+  letter-spacing: 2rpx;
+}
+
+/* ── Bottom input ── */
+.qc-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 28rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #2A231D;
+  border-top: 2rpx solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+}
+.qc-input {
+  flex: 1;
+  height: 88rpx;
+  background: rgba(255,255,255,.06);
+  border: 2rpx solid rgba(255,255,255,.08);
+  border-radius: 44rpx;
+  padding: 0 32rpx;
+  font-size: 28rpx;
+  color: #FDFBF7;
+}
+.qc-input-ph {
+  color: rgba(255,255,255,.18);
+  font-size: 28rpx;
+}
+.qc-send {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.qc-send--hover { opacity: .8; }
+.qc-send--ready {
+  background: linear-gradient(135deg, #C49A6C, #B8885A);
+}
+.qc-send-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+}
+</style>

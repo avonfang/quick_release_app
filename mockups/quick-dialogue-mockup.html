@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>觉察对话 — 原型</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; background: #1C1A17;
+    font-family: -apple-system, "PingFang SC", "Noto Serif SC", sans-serif;
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 390px; height: 844px;
+    background: #2A231D; border-radius: 44px;
+    overflow: hidden; position: relative;
+    box-shadow: 0 0 0 2px #3D362D, 0 20px 60px rgba(0,0,0,.5);
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    height: 54px; display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 28px 12px; color: #FDFBF7; font-size: 12px; font-weight: 600;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    display: flex; align-items: center; justify-content: center;
+    height: 44px; position: relative;
+  }
+  .nav-back {
+    position: absolute; left: 16px;
+    color: #C49A6C; font-size: 15px; cursor: pointer; padding: 4px 8px;
+  }
+  .nav-title { color: #FDFBF7; font-size: 16px; font-weight: 600; letter-spacing: 2px; }
+
+  /* ── Chat area ── */
+  .chat {
+    height: calc(844px - 54px - 44px - 72px);
+    padding: 16px 20px;
+    overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── Messages ── */
+  .msg-row { display: flex; flex-direction: column; }
+  .msg-row.user { align-items: flex-end; }
+  .msg-row.ai { align-items: flex-start; }
+
+  .bubble {
+    max-width: 82%; padding: 12px 16px; border-radius: 18px;
+    font-size: 15px; line-height: 1.6; letter-spacing: .3px;
+  }
+  .bubble-ai {
+    background: rgba(255,255,255,.08); color: #FDFBF7;
+    border-bottom-left-radius: 6px;
+  }
+  .bubble-user {
+    background: linear-gradient(135deg, #C49A6C, #B8885A); color: #fff;
+    border-bottom-right-radius: 6px;
+  }
+
+  /* ── Quick replies (emotion chips) ── */
+  .quick-replies {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .chip {
+    display: flex; align-items: center; gap: 4px;
+    padding: 10px 16px; border-radius: 24px;
+    background: rgba(255,255,255,.06); color: #FDFBF7;
+    border: 1.5px solid rgba(255,255,255,.1);
+    font-size: 14px; cursor: pointer; transition: all .15s ease;
+    user-select: none;
+  }
+  .chip:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); }
+  .chip:active { transform: scale(.95); }
+  .chip.selected {
+    background: rgba(196,154,108,.15); border-color: #C49A6C;
+    color: #C49A6C;
+  }
+  .chip-emoji { font-size: 18px; }
+
+  /* ── Intensity bar ── */
+  .intensity-bar {
+    display: flex; gap: 4px; margin-top: 6px; width: 100%;
+  }
+  .intensity-dot {
+    flex: 1; height: 40px; border-radius: 8px;
+    background: rgba(255,255,255,.06); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: rgba(255,255,255,.3); font-weight: 500;
+    transition: all .15s ease;
+  }
+  .intensity-dot:hover { background: rgba(255,255,255,.1); }
+  .intensity-dot.on { background: #C49A6C; color: #fff; }
+
+  /* ── Text input in-chat ── */
+  .chat-input-row {
+    display: flex; gap: 8px; margin-top: 4px; align-items: flex-end;
+  }
+  .chat-input-field {
+    flex: 1; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px; padding: 12px 16px; color: #FDFBF7; font-size: 14px;
+    outline: none; resize: none; font-family: inherit; line-height: 1.5;
+    height: 44px;
+  }
+  .chat-input-field:focus { border-color: rgba(196,154,108,.4); }
+  .chat-input-field::placeholder { color: rgba(255,255,255,.2); }
+
+  .send-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #C49A6C, #B8885A);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all .15s ease;
+    border: none;
+  }
+  .send-btn:active { transform: scale(.92); }
+  .send-btn svg { width: 18px; height: 18px; }
+
+  /* ── Fact / Worry buttons ── */
+  .fw-btns { display: flex; gap: 10px; margin-top: 6px; }
+  .fw-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 12px; border-radius: 14px;
+    background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.08);
+    cursor: pointer; transition: all .15s ease;
+  }
+  .fw-btn:hover { background: rgba(255,255,255,.1); border-color: rgba(196,154,108,.3); }
+  .fw-btn:active { transform: scale(.96); }
+  .fw-icon { font-size: 22px; color: #C49A6C; }
+  .fw-label { font-size: 14px; color: #FDFBF7; font-weight: 500; }
+  .fw-desc { font-size: 11px; color: rgba(255,255,255,.3); }
+
+  /* ── AI response (result) ── */
+  .result-card {
+    background: rgba(255,255,255,.05); border-radius: 14px;
+    padding: 16px; margin-top: 6px; width: 100%;
+    border: 1px solid rgba(255,255,255,.06);
+  }
+  .result-section { margin-bottom: 12px; }
+  .result-label {
+    font-size: 10px; color: rgba(255,255,255,.25); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .result-text { font-size: 13px; color: #FDFBF7; line-height: 1.6; }
+  .result-divider {
+    height: 1px; background: rgba(255,255,255,.06); margin: 14px 0;
+  }
+  .result-ai-text { font-size: 14px; color: #FDFBF7; line-height: 1.8; }
+  .cursor {
+    display: inline-block; width: 1px; height: 16px; background: #C49A6C;
+    animation: blink .8s infinite; vertical-align: text-bottom; margin-left: 2px;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .retry-btn {
+    text-align: center; padding: 12px 0; color: #C49A6C;
+    font-size: 13px; cursor: pointer; user-select: none;
+  }
+
+  /* ── Deep link ── */
+  .deep-link {
+    text-align: center; padding: 16px 0; color: rgba(255,255,255,.25);
+    font-size: 13px; letter-spacing: 1px; cursor: pointer;
+  }
+
+  /* ── Bottom bar ── */
+  .bottom-bar {
+    height: 72px; display: flex; align-items: center; justify-content: center;
+    border-top: 1px solid rgba(255,255,255,.05);
+  }
+  .bottom-hint { color: rgba(255,255,255,.15); font-size: 12px; letter-spacing: 1px; }
+
+  /* ── Phase labels (small text above AI bubble) ── */
+  .phase-tag {
+    font-size: 10px; color: rgba(255,255,255,.2); letter-spacing: 1px;
+    margin-bottom: 6px; margin-left: 4px;
+  }
+
+  /* ── Scrollbar ── */
+  .chat::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+<div class="phone" id="app">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>🔋</span>
+  </div>
+  <div class="nav">
+    <span class="nav-back" onclick="resetAll()">← 觉察</span>
+    <span class="nav-title">看见此刻</span>
+  </div>
+  <div class="chat" id="chat">
+    <!-- Dynamically filled -->
+  </div>
+  <div class="bottom-bar">
+    <span class="bottom-hint">轻量觉察 · 大约 2 分钟</span>
+  </div>
+</div>
+
+<script>
+const emotions = [
+  { emoji:'😰', label:'焦虑', value:'焦虑' },
+  { emoji:'😤', label:'烦躁', value:'烦躁' },
+  { emoji:'😔', label:'低落', value:'低落' },
+  { emoji:'😌', label:'平静', value:'平静' },
+  { emoji:'😊', label:'开心', value:'开心' },
+  { emoji:'😢', label:'难过', value:'难过' },
+];
+
+const chat = document.getElementById('chat');
+
+function scrollBottom() {
+  setTimeout(() => { chat.scrollTop = chat.scrollHeight; }, 50);
+}
+
+function addAIBubble(text, tag) {
+  const row = document.createElement('div'); row.className = 'msg-row ai';
+  let html = '';
+  if (tag) html += `<span class="phase-tag">${tag}</span>`;
+  html += `<view class="bubble bubble-ai">${text}</view>`;
+  row.innerHTML = html;
+  chat.appendChild(row);
+  scrollBottom();
+}
+
+function addUserBubble(text) {
+  const row = document.createElement('div'); row.className = 'msg-row user';
+  row.innerHTML = `<view class="bubble bubble-user">${text}</view>`;
+  chat.appendChild(row);
+  scrollBottom();
+}
+
+function addQuickReplies(chips, cls, onClick) {
+  const row = document.createElement('div'); row.className = 'msg-row ai';
+  const wrap = document.createElement('div'); wrap.className = 'quick-replies';
+  chips.forEach(c => {
+    const el = document.createElement('span');
+    el.className = cls || 'chip';
+    el.innerHTML = c.html || c.label;
+    el.onclick = () => onClick(c.value || c.label);
+    wrap.appendChild(el);
+  });
+  row.appendChild(wrap);
+  chat.appendChild(row);
+  scrollBottom();
+}
+
+function addIntensityBar(current, onChange) {
+  const row = document.createElement('div'); row.className = 'msg-row ai';
+  const bar = document.createElement('div'); bar.className = 'intensity-bar';
+  for (let i = 1; i <= 10; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'intensity-dot' + (i <= current ? ' on' : '');
+    dot.textContent = i;
+    dot.onclick = () => onChange(i);
+    bar.appendChild(dot);
+  }
+  row.appendChild(bar);
+  chat.appendChild(row);
+  scrollBottom();
+}
+
+function addTextInput(placeholder, onSubmit) {
+  const row = document.createElement('div'); row.className = 'msg-row user';
+  const wrap = document.createElement('div'); wrap.className = 'chat-input-row';
+  wrap.style.width = '100%';
+  const input = document.createElement('input');
+  input.className = 'chat-input-field';
+  input.placeholder = placeholder;
+  input.onkeydown = (e) => { if (e.key === 'Enter') onSubmit(input.value); };
+  const btn = document.createElement('button');
+  btn.className = 'send-btn';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+  btn.onclick = () => onSubmit(input.value);
+  wrap.appendChild(input);
+  wrap.appendChild(btn);
+  row.appendChild(wrap);
+  chat.appendChild(row);
+  scrollBottom();
+  setTimeout(() => input.focus(), 100);
+}
+
+function addFactWorryButtons(onSelect) {
+  const row = document.createElement('div'); row.className = 'msg-row ai';
+  const wrap = document.createElement('div'); wrap.className = 'fw-btns';
+  [
+    { icon:'◎', label:'更像事实', desc:'有明确的证据支持', value:'fact' },
+    { icon:'○', label:'更像一种担心', desc:'更多是脑海中的假设', value:'worry' },
+  ].forEach(item => {
+    const btn = document.createElement('div');
+    btn.className = 'fw-btn';
+    btn.innerHTML = `<span class="fw-icon">${item.icon}</span><span class="fw-label">${item.label}</span><span class="fw-desc">${item.desc}</span>`;
+    btn.onclick = () => onSelect(item.value);
+    wrap.appendChild(btn);
+  });
+  row.appendChild(wrap);
+  chat.appendChild(row);
+  scrollBottom();
+}
+
+function addResultCard(emotion, intensity, event, thought) {
+  const row = document.createElement('div'); row.className = 'msg-row ai';
+  const card = document.createElement('div'); card.className = 'result-card';
+  card.innerHTML = `
+    <div class="result-section">
+      <div class="result-label">情绪</div>
+      <div class="result-text">${emotion} · ${intensity}/10</div>
+    </div>
+    <div class="result-section">
+      <div class="result-label">事件</div>
+      <div class="result-text">${event}</div>
+    </div>
+    <div class="result-section">
+      <div class="result-label">内心声音</div>
+      <div class="result-text">我注意到我在想：${thought}</div>
+    </div>
+    <div class="result-divider"></div>
+    <div class="result-ai-text" id="typewriter-target"></div>
+    <div class="cursor" id="typewriter-cursor"></div>
+  `;
+  row.appendChild(card);
+  chat.appendChild(row);
+  scrollBottom();
+
+  // Typewriter
+  const text = `那一刻被问住确实让人紧张，尤其在完全没有准备的时候。
+
+也许你心里有这样一个声音："如果回答不上来，大家会觉得我不够好。"
+
+这个声音出现的时候，你身体哪个部位感受最明显？`;
+  const target = document.getElementById('typewriter-target');
+  const cursor = document.getElementById('typewriter-cursor');
+  let i = 0;
+  const chars = [...text];
+  const timer = setInterval(() => {
+    if (i < chars.length) {
+      target.textContent += chars[i];
+      i++;
+      scrollBottom();
+    } else {
+      clearInterval(timer);
+      cursor.style.display = 'none';
+      showRetry();
+    }
+  }, 40);
+}
+
+function showRetry() {
+  const row = document.createElement('div'); row.className = 'msg-row ai';
+  row.innerHTML = `<div class="retry-btn" onclick="resetAll()">再记一条</div>`;
+  chat.appendChild(row);
+
+  const deep = document.createElement('div'); deep.className = 'msg-row ai';
+  deep.innerHTML = `<div class="deep-link">想深入探索？进行一次完整的觉察对话 →</div>`;
+  chat.appendChild(deep);
+  scrollBottom();
+}
+
+// ── Flow ──
+function resetAll() {
+  chat.innerHTML = '';
+  startFlow();
+}
+
+function startFlow() {
+  addAIBubble('嗨，你现在感觉怎么样？选一个最贴近此刻心情的吧 👇', '情绪觉察');
+  addQuickReplies(
+    emotions.map(e => ({ html: `<span class="chip-emoji">${e.emoji}</span> ${e.label}`, label: e.label, value: e.value })),
+    'chip',
+    (emotion) => onEmotionSelected(emotion)
+  );
+}
+
+function onEmotionSelected(emotion) {
+  // Highlight selected
+  document.querySelectorAll('.chip').forEach(c => {
+    if (c.textContent.includes(emotion)) c.classList.add('selected');
+    else c.classList.remove('selected');
+  });
+  // Disable further clicks
+  document.querySelectorAll('.chip').forEach(c => c.style.pointerEvents = 'none');
+
+  setTimeout(() => {
+    addUserBubble(emotion);
+    const emoji = emotions.find(e=>e.value===emotion)?.emoji||'';
+    addAIBubble(`嗯，${emoji} ${emotion}。这种感受的强度大概是多少？1 是很轻微，10 是非常强烈。`);
+    addIntensityBar(5, (intensity) => onIntensitySelected(emotion, intensity));
+  }, 300);
+}
+
+function onIntensitySelected(emotion, intensity) {
+  setTimeout(() => {
+    addUserBubble(`强度 ${intensity}/10`);
+    addAIBubble('今天发生了什么，让你有这种感觉？');
+    addTextInput('比如：下午开会时被突然点名...', (text) => {
+      if (!text.trim()) return;
+      onEventEntered(emotion, intensity, text.trim());
+    });
+  }, 200);
+}
+
+function onEventEntered(emotion, intensity, event) {
+  // Remove text input row
+  const rows = chat.querySelectorAll('.msg-row.user');
+  const lastUserRow = rows[rows.length - 1];
+  if (lastUserRow) {
+    lastUserRow.innerHTML = `<view class="bubble bubble-user">${event}</view>`;
+  }
+  // Remove text input row (the one with input)
+  const inputRow = chat.querySelector('.chat-input-row')?.parentElement;
+  if (inputRow) inputRow.remove();
+
+  setTimeout(() => {
+    addAIBubble('当这件事发生的时候，你脑子里出现了什么想法？试着用"我注意到我在想..."来表达。');
+    addTextInput('比如：如果回答不上来大家会觉得我不行...', (text) => {
+      if (!text.trim()) return;
+      onThoughtEntered(emotion, intensity, event, text.trim());
+    });
+  }, 500);
+}
+
+function onThoughtEntered(emotion, intensity, event, thought) {
+  const rows = chat.querySelectorAll('.msg-row.user');
+  const lastUserRow = rows[rows.length - 1];
+  if (lastUserRow) {
+    lastUserRow.innerHTML = `<view class="bubble bubble-user">我注意到我在想：${thought}</view>`;
+  }
+  const inputRow = chat.querySelector('.chat-input-row')?.parentElement;
+  if (inputRow) inputRow.remove();
+
+  setTimeout(() => {
+    addAIBubble('这个想法——它更像一件事实，还是更像一种担心？');
+    addFactWorryButtons((fw) => onFactWorrySelected(emotion, intensity, event, thought, fw));
+  }, 500);
+}
+
+function onFactWorrySelected(emotion, intensity, event, thought, fw) {
+  const label = fw === 'fact' ? '更像事实' : '更像一种担心';
+  addUserBubble(label);
+
+  // Remove FW buttons
+  const fwWrap = chat.querySelector('.fw-btns')?.parentElement;
+  if (fwWrap) fwWrap.remove();
+
+  setTimeout(() => {
+    addAIBubble('正在倾听...', 'AI 回应');
+    setTimeout(() => {
+      // Remove "正在倾听" bubble and replace with result
+      const loadingBubbles = chat.querySelectorAll('.bubble-ai');
+      const lastAI = loadingBubbles[loadingBubbles.length - 1];
+      if (lastAI && lastAI.textContent === '正在倾听...') {
+        lastAI.parentElement.remove();
+      }
+      addResultCard(emotion, intensity, event, thought);
+    }, 1500);
+  }, 400);
+}
+
+// Start
+startFlow();
+</script>
+</body>
+</html>

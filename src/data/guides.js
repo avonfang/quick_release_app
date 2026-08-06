@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   "anxiety": {
     "label": "焦虑",
     "steps": [

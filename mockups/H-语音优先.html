@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=375, initial-scale=1.0"><title>H-语音优先</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;justify-content:center;background:#1a1a2e}
+.phone{width:375px;height:740px;background:#2A231D;display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:"PingFang SC","Hiragino Sans GB",sans-serif}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:44px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.nav-back{color:#C4A06A;font-size:15px}
+.nav-title{font-size:15px;color:#E8DFD0;font-weight:600;letter-spacing:2px}
+.nav-step{font-size:11px;color:rgba(255,255,255,0.3)}
+.progress{display:flex;justify-content:center;gap:8px;padding:12px 0}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1)}
+.dot.done{background:#C69C6D;opacity:0.5}
+.dot.active{background:#C69C6D;box-shadow:0 0 0 4px rgba(198,156,109,0.2)}
+/* main area */
+.main{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 28px 100px}
+.question{font-size:18px;color:#FDFBF7;line-height:1.8;text-align:center;margin-bottom:48px;font-weight:500}
+.question em{color:#C69C6D;font-style:normal}
+/* recording button */
+.rec-area{display:flex;flex-direction:column;align-items:center;gap:20px}
+.rec-btn{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#E84F4F,#C0392B);display:flex;align-items:center;justify-content:center;position:relative;animation:recPulse 1.6s ease-in-out infinite}
+.rec-btn-inner{width:44px;height:44px;border-radius:12px;background:#fff}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,79,79,0.4)}50%{box-shadow:0 0 0 24px rgba(232,79,79,0)}}
+.rec-timer{font-size:22px;color:#FDFBF7;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.rec-hint{font-size:13px;color:rgba(255,255,255,0.3);text-align:center;line-height:1.6}
+/* waveform */
+.waveform{display:flex;align-items:center;gap:3px;height:36px}
+.wave-bar{width:3px;border-radius:2px;background:#C69C6D;animation:wave 0.8s ease-in-out infinite}
+.wave-bar:nth-child(1){height:12px;animation-delay:0s}
+.wave-bar:nth-child(2){height:22px;animation-delay:0.08s}
+.wave-bar:nth-child(3){height:16px;animation-delay:0.16s}
+.wave-bar:nth-child(4){height:30px;animation-delay:0.24s}
+.wave-bar:nth-child(5){height:20px;animation-delay:0.32s}
+.wave-bar:nth-child(6){height:28px;animation-delay:0.4s}
+.wave-bar:nth-child(7){height:18px;animation-delay:0.48s}
+.wave-bar:nth-child(8){height:24px;animation-delay:0.56s}
+.wave-bar:nth-child(9){height:14px;animation-delay:0.64s}
+.wave-bar:nth-child(10){height:26px;animation-delay:0.72s}
+.wave-bar:nth-child(11){height:16px;animation-delay:0.8s}
+.wave-bar:nth-child(12){height:20px;animation-delay:0.88s}
+@keyframes wave{0%,100%{transform:scaleY(0.6);opacity:0.5}50%{transform:scaleY(1.4);opacity:1}}
+/* transcribed text */
+.transcript{background:rgba(255,255,255,0.04);border-radius:12px;padding:14px 18px;max-width:300px;margin-top:0}
+.transcript-text{font-size:14px;color:rgba(255,255,255,0.6);line-height:1.7}
+.transcript-label{font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:2px;margin-bottom:8px}
+/* bottom hint */
+.bottom-hint{font-size:11px;color:rgba(255,255,255,0.15);text-align:center;margin-top:16px}
+.bottom-hint span{color:rgba(255,255,255,0.3)}
+</style></head>
+<body><div class="phone">
+<div class="nav">
+<span class="nav-back">← 返回</span>
+<span class="nav-title">一次觉察</span>
+<span class="nav-step">3/8</span>
+</div>
+<div class="progress">
+<span class="dot done"></span><span class="dot done"></span><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+</div>
+<div class="main">
+  <div class="question">我感受到了。你说"什么都做不好"的时候，<em>身体</em>有什么感觉吗？</div>
+  <div class="rec-area">
+    <div class="waveform">
+      <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+    </div>
+    <div class="rec-btn">
+      <div class="rec-btn-inner"></div>
+    </div>
+    <div class="rec-timer">0:12</div>
+    <div class="rec-hint">正在聆听...<br>说完后轻点按钮结束</div>
+  </div>
+  <div class="transcript">
+    <div class="transcript-label">实时转写</div>
+    <div class="transcript-text">胸口的闷闷的，好像有一块石头压在那里，呼吸都变浅了...</div>
+  </div>
+  <div class="bottom-hint"><span>↑</span> 或点下方输入框打字</div>
+</div>
+</div></body></html>

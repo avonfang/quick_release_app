@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=375, initial-scale=1.0"><title>B-卡片式引导</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;justify-content:center;background:#1a1a2e}
+.phone{width:375px;height:740px;background:#2A231D;display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:"PingFang SC","Hiragino Sans GB",sans-serif}
+.nav{display:flex;align-items:center;padding:44px 16px 12px;gap:12px}
+.nav-back{color:#C4A06A;font-size:16px}
+.nav-title{flex:1;text-align:center;color:#E8DFD0;font-size:15px;font-weight:600;letter-spacing:2px}
+.nav-step{color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:1px}
+/* progress dots */
+.progress{display:flex;justify-content:center;gap:6px;padding:16px 0 8px}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.12)}
+.dot.active{background:#C69C6D;width:20px;border-radius:3px}
+.dot.done{background:rgba(198,156,109,0.4)}
+/* main card */
+.card-area{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:32px 24px 24px;width:100%;max-width:330px}
+.card-stage{font-size:11px;color:#C69C6D;letter-spacing:4px;text-align:center;margin-bottom:20px}
+.card-question{font-size:17px;color:#FDFBF7;line-height:1.8;text-align:center;margin-bottom:28px;font-weight:500}
+.card-input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 16px;color:#FDFBF7;font-size:14px;outline:none;resize:none;font-family:inherit;line-height:1.6;min-height:80px;margin-bottom:20px}
+.card-input:focus{border-color:#C69C6D}
+.card-input::placeholder{color:rgba(255,255,255,0.2)}
+.card-actions{display:flex;gap:12px}
+.card-btn{flex:1;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none}
+.card-btn.primary{background:linear-gradient(135deg,#C69C6D,#B8885A);color:#fff;letter-spacing:2px}
+.card-btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4)}
+/* history peek */
+.history-hint{text-align:center;margin-top:20px;font-size:11px;color:rgba(255,255,255,0.2)}
+</style></head>
+<body><div class="phone">
+<div class="nav"><span class="nav-back">←</span><span class="nav-title">一次觉察</span><span class="nav-step">3 / 8</span></div>
+<div class="progress">
+<div class="dot done"></div><div class="dot done"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+</div>
+<div class="card-area">
+<div class="card">
+<div class="card-stage">自 动 想 法</div>
+<div class="card-question">"我很差劲，什么都做不好"<br><br>当这个想法出现的时候，你的身体有什么感觉？</div>
+<textarea class="card-input" placeholder="写下你身体的感受...">胸口很闷，肩膀紧绷着</textarea>
+<div class="card-actions">
+<button class="card-btn ghost">跳过</button>
+<button class="card-btn primary">继续 →</button>
+</div>
+</div>
+</div>
+<div class="history-hint">↑ 上滑查看已回答的问题</div>
+</div></body></html>

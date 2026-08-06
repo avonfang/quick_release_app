@@ -47,7 +47,7 @@ defineProps<{
 
 .user-bubble {
   max-width: 100%;
-  background: $primary-gradient;
+  background: var(--send-btn, linear-gradient(135deg, #C69C6D, #B8885A));
   border-radius: 16px;
   border-bottom-right-radius: 4px;
   padding: 22rpx 28rpx;

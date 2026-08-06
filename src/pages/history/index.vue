@@ -17,6 +17,7 @@ const records = ref<HistoryRecord[]>([])
 const loading = ref(true)
 const refresherTriggered = ref(false)
 const swipedId = ref('')
+const justSwiped = ref(false)
 // 每个项的 translateX 偏移量（rpx）
 const translates = reactive<Record<string, number>>({})
 const DELETE_WIDTH = 180
@@ -56,16 +57,21 @@ const goBack = () => {
 
 /** 关闭所有滑出的删除按钮 */
 const closeAll = () => {
+  if (justSwiped.value) return
   swipedId.value = ''
   records.value.forEach(r => { translates[r._id] = 0 })
 }
 
 const getClientX = (e: any): number => {
-  return e.touches ? e.touches[0].clientX : e.clientX
+  if (e.touches && e.touches.length > 0) return e.touches[0].clientX
+  if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX
+  return e.clientX || 0
 }
 
 const getClientY = (e: any): number => {
-  return e.touches ? e.touches[0].clientY : e.clientY
+  if (e.touches && e.touches.length > 0) return e.touches[0].clientY
+  if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientY
+  return e.clientY || 0
 }
 
 const onSwipeStart = (e: any, itemId: string) => {
@@ -89,6 +95,8 @@ const onSwipeEnd = (e: any, itemId: string) => {
   if (deltaX < -DELETE_WIDTH / 2) {
     swipedId.value = itemId
     translates[itemId] = -DELETE_WIDTH
+    justSwiped.value = true
+    setTimeout(() => { justSwiped.value = false }, 350)
   } else {
     swipedId.value = ''
     translates[itemId] = 0

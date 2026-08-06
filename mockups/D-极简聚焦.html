@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=375, initial-scale=1.0"><title>D-极简聚焦</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;justify-content:center;background:#1a1a2e}
+.phone{width:375px;height:740px;background:#2A231D;display:flex;flex-direction:column;overflow:hidden;position:relative;font-family:"PingFang SC","Hiragino Sans GB",sans-serif}
+/* minimal header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:44px 20px 8px}
+.header-back{color:#C4A06A;font-size:15px}
+.header-step{font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:2px}
+.header-count{font-size:11px;color:rgba(255,255,255,0.2)}
+/* main focus area */
+.focus-area{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 28px 120px}
+.focus-question{font-size:20px;color:#FDFBF7;line-height:1.8;font-weight:500;margin-bottom:40px;letter-spacing:1px}
+.focus-highlight{color:#C69C6D}
+/* big input */
+.focus-input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.1);padding:12px 0;color:#FDFBF7;font-size:16px;outline:none;resize:none;font-family:inherit;line-height:1.8;min-height:100px;margin-bottom:32px;transition:border-color 0.3s}
+.focus-input:focus{border-bottom-color:#C69C6D}
+.focus-input::placeholder{color:rgba(255,255,255,0.15);font-size:16px}
+/* action row */
+.focus-actions{display:flex;align-items:center;gap:16px}
+.focus-next{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#C69C6D,#B8885A);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;border:none;cursor:pointer;transition:all 0.2s}
+.focus-skip{font-size:12px;color:rgba(255,255,255,0.2);background:none;border:none;cursor:pointer}
+/* subtle hint to scroll up */
+.scroll-hint{text-align:center;font-size:10px;color:rgba(255,255,255,0.12);position:absolute;bottom:80px;left:0;right:0;letter-spacing:1px}
+</style></head>
+<body><div class="phone">
+<div class="header">
+<span class="header-back">←</span>
+<span class="header-step">问 题 3 / 8</span>
+<span class="header-count">●●○○○○○○</span>
+</div>
+<div class="focus-area">
+<div class="focus-question">"我很差劲，什么都做不好"——这个想法让你在身体上有什么<span class="focus-highlight">感觉</span>？</div>
+<textarea class="focus-input" placeholder="不用急着回答，先感受一下身体...">胸口很闷，像有什么东西压着。</textarea>
+<div class="focus-actions">
+<button class="focus-next">⟶</button>
+<button class="focus-skip">跳过这一问</button>
+</div>
+</div>
+<div class="scroll-hint">↑ 上滑回顾之前的对话</div>
+</div></body></html>

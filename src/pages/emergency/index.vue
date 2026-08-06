@@ -171,8 +171,8 @@
 </template>
 
 <script>
-import * as guides from '@/data/guides'
-import * as courses from '@/data/courses'
+import guides from '@/data/guides'
+import courses from '@/data/courses'
 import * as coins from '@/utils/coins'
 
 function svgDataUri(svg) {

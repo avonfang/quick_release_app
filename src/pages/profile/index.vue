@@ -8,7 +8,71 @@
       <text class="page-subtitle">练习报告与成长</text>
     </view>
 
-    <!-- Hero card -->
+    <!-- User account section -->
+    <view class="account-card">
+      <view class="account-header">
+        <text class="account-icon">👤</text>
+        <text class="account-title">账户</text>
+      </view>
+
+      <!-- Not logged in -->
+      <view v-if="!isLoggedIn" class="account-login-area">
+        <text class="account-hint">登录后可同步数据到云端</text>
+        <view class="btn btn-primary btn-md" @tap="goLogin">登录 / 注册</view>
+      </view>
+
+      <!-- Logged in -->
+      <view v-if="isLoggedIn" class="account-info-area">
+        <view class="account-row">
+          <text class="account-label">邮箱</text>
+          <text class="account-value">{{userEmail}}</text>
+        </view>
+        <view class="account-actions">
+          <view class="btn btn-outline btn-sm" @tap="showChangePwd">修改密码</view>
+          <view class="btn btn-outline btn-sm danger" @tap="handleLogout">退出登录</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Change password modal -->
+    <view class="shop-overlay" :class="{ visible: changePwdVisible }" v-if="changePwdVisible" @tap.stop="closeChangePwd">
+      <view class="shop-card" @tap.stop="">
+        <text class="shop-title">修改密码</text>
+        <input
+          class="pwd-input"
+          type="password"
+          v-model="oldPassword"
+          placeholder="当前密码"
+          placeholder-style="color: rgba(255,255,255,0.3)"
+          maxlength="50"
+        />
+        <input
+          class="pwd-input"
+          type="password"
+          v-model="newPassword"
+          placeholder="新密码（至少6位）"
+          placeholder-style="color: rgba(255,255,255,0.3)"
+          maxlength="50"
+        />
+        <text v-if="pwdError" class="pwd-error">{{pwdError}}</text>
+        <view class="btn btn-primary btn-md" @tap="submitChangePwd" :style="{ opacity: pwdLoading ? 0.6 : 1 }">确认修改</view>
+        <view class="btn btn-ghost btn-sm" @tap="closeChangePwd" style="margin-top: 12rpx;">取消</view>
+      </view>
+    </view>
+    <!-- Quick nav: 记录 & 模式 -->
+    <view class="quick-nav">
+      <view class="quick-nav-item" @tap="goHistory">
+        <text class="quick-nav-icon">📋</text>
+        <text class="quick-nav-label">记录</text>
+        <text class="quick-nav-arrow">→</text>
+      </view>
+      <view class="quick-nav-item" @tap="goInsight">
+        <text class="quick-nav-icon">🧠</text>
+        <text class="quick-nav-label">模式</text>
+        <text class="quick-nav-arrow">→</text>
+      </view>
+    </view>
+
     <view class="hero-card">
       <text class="hero-greeting">我的练习报告</text>
       <text class="hero-name">此刻</text>
@@ -232,6 +296,7 @@
 import * as util from '@/utils/util'
 import * as report from '@/utils/report'
 import * as coins from '@/utils/coins'
+import { isLoggedIn, clearToken, api } from '@/utils/api'
 
 export default {
   data() {
@@ -254,7 +319,14 @@ export default {
       coinLedger: [],
       savedQuotes: [],
       shopVisible: false,
-      shopItems: {}
+      shopItems: {},
+      isLoggedIn: false,
+      userEmail: '',
+      changePwdVisible: false,
+      oldPassword: '',
+      newPassword: '',
+      pwdError: '',
+      pwdLoading: false
     }
   },
 
@@ -263,6 +335,11 @@ export default {
     const theme = uni.getStorageSync('appTheme') || 'default'
     this.isPremium = isPremium
     this.themeClass = 'theme-' + theme
+    this.isLoggedIn = isLoggedIn()
+    if (this.isLoggedIn) {
+      const userInfo = uni.getStorageSync('userInfo') || {}
+      this.userEmail = userInfo.email || ''
+    }
     this.loadReport()
   },
 
@@ -433,6 +510,70 @@ export default {
       this.themeClass = 'theme-' + key
       this.shopVisible = false
       uni.showToast({ title: `✨ ${key === 'ocean' ? '🌊 海洋' : '🌿 森林'}主题已解锁`, icon: 'success' })
+    },
+
+    goHistory() {
+      uni.navigateTo({ url: '/pages/history/index' })
+    },
+
+    goInsight() {
+      uni.navigateTo({ url: '/pages/insight/index' })
+    },
+
+    goLogin() {
+      uni.navigateTo({ url: '/pages/auth/index' })
+    },
+
+    showChangePwd() {
+      this.oldPassword = ''
+      this.newPassword = ''
+      this.pwdError = ''
+      this.changePwdVisible = true
+    },
+
+    closeChangePwd() {
+      this.changePwdVisible = false
+    },
+
+    async submitChangePwd() {
+      if (!this.oldPassword || !this.newPassword) {
+        this.pwdError = '请填写当前密码和新密码'
+        return
+      }
+      if (this.newPassword.length < 6) {
+        this.pwdError = '新密码至少6位'
+        return
+      }
+      this.pwdLoading = true
+      this.pwdError = ''
+      try {
+        await api.post('/auth/change-password', {
+          oldPassword: this.oldPassword,
+          newPassword: this.newPassword,
+        })
+        uni.showToast({ title: '密码已修改', icon: 'success' })
+        this.changePwdVisible = false
+      } catch (e) {
+        this.pwdError = e instanceof Error ? e.message : '修改失败'
+      } finally {
+        this.pwdLoading = false
+      }
+    },
+
+    handleLogout() {
+      uni.showModal({
+        title: '退出登录',
+        content: '退出后本地数据不会丢失，但需要重新登录才能同步到云端。',
+        success: (res) => {
+          if (res.confirm) {
+            clearToken()
+            uni.removeStorageSync('userInfo')
+            this.isLoggedIn = false
+            this.userEmail = ''
+            uni.showToast({ title: '已退出', icon: 'none' })
+          }
+        }
+      })
     },
 
     exportData() {
@@ -609,6 +750,69 @@ export default {
 .shop-item-desc { font-size: 22rpx; color: rgba(255,255,255,0.4); display: block; margin-top: 2rpx; }
 .shop-item-price { font-size: 28rpx; color: #C69C6D; font-weight: 600; display: block; }
 .shop-item-owned { font-size: 24rpx; color: rgba(255,255,255,0.3); display: block; }
+
+/* Account card */
+.account-card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 24rpx; padding: 28rpx;
+  margin-bottom: 24rpx;
+  border: 2rpx solid rgba(255,255,255,0.06);
+}
+.account-header { display: flex; align-items: center; gap: 12rpx; margin-bottom: 20rpx; }
+.account-icon { font-size: 32rpx; }
+.account-title { font-size: 28rpx; font-weight: 600; color: #FDFBF7; }
+.account-login-area { display: flex; align-items: center; justify-content: space-between; }
+.account-hint { font-size: 24rpx; color: rgba(255,255,255,0.3); }
+.account-info-area { }
+.account-row { display: flex; justify-content: space-between; align-items: center; padding: 12rpx 0; border-bottom: 2rpx solid rgba(255,255,255,0.06); margin-bottom: 16rpx; }
+.account-label { font-size: 24rpx; color: rgba(255,255,255,0.4); }
+.account-value { font-size: 26rpx; color: #FDFBF7; }
+.account-actions { display: flex; gap: 16rpx; }
+.pwd-input {
+  width: 100%; height: 80rpx; box-sizing: border-box;
+  background: rgba(255,255,255,0.06); border-radius: 16rpx;
+  padding: 0 24rpx; font-size: 28rpx; color: #FDFBF7;
+  margin-bottom: 16rpx;
+}
+.pwd-error { font-size: 24rpx; color: #D4786A; display: block; margin-bottom: 12rpx; text-align: center; }
+.btn-outline.danger { border-color: rgba(212,120,106,0.3); color: #D4786A; }
+
+/* Quick Nav: 记录 & 模式 */
+.quick-nav {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+.quick-nav-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  border: 2rpx solid rgba(255,255,255,0.06);
+  transition: all 0.15s;
+}
+.quick-nav-item:active {
+  transform: scale(0.97);
+  background: rgba(255,255,255,0.06);
+}
+.quick-nav-icon { font-size: 36rpx; }
+.quick-nav-label {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FDFBF7;
+}
+.quick-nav-arrow {
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.3);
+}
 
 /* Buttons (dark theme overrides) */
 .btn-primary {

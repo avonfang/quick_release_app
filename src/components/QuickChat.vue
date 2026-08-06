@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   quickAIResponse,
   saveQuickRecord,
@@ -60,7 +60,7 @@ const form = reactive({
 })
 const aiResponse = ref('')
 const inputText = ref('')
-const scrollTop = ref(0)
+const scrollKey = ref(0)
 const saving = ref(false)
 
 const statusBarHeight = ref(20)
@@ -79,12 +79,11 @@ function startFlow() {
 }
 
 function scrollToBottom() {
-  // Use a very large value; scroll-view clamps to max scrollable distance
-  scrollTop.value = scrollTop.value + 99999
+  scrollKey.value++
 }
 
 function scrollNow() {
-  scrollTop.value = scrollTop.value + 99999
+  scrollKey.value++
 }
 
 // Auto-scroll on state or message changes (flush:'post' ensures DOM is ready)
@@ -220,7 +219,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
     <scroll-view
       class="qc-scroll"
       scroll-y
-      :scroll-top="scrollTop"
+      :scroll-into-view="'qc-bottom-' + scrollKey"
       :scroll-with-animation="true"
       :enhanced="true"
       :show-scrollbar="false"
@@ -384,6 +383,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
           </view>
         </template>
 
+        <view :id="'qc-bottom-' + scrollKey" style="height:1rpx;"></view>
       </view>
     </scroll-view>
 

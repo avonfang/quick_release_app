@@ -192,6 +192,7 @@ function startStreaming(fullText: string, stage: string) {
       // Add to store once streaming finishes
       store.addMessage({ role: 'assistant', content: fullText, stage })
       streamingContent.value = ''
+      scrollToBottom()
       return
     }
     // Reveal 2-4 chars per tick for natural feel
@@ -383,7 +384,6 @@ async function loadSession(sessionId: string) {
     return
   } finally {
     isInitializing.value = false
-    buildJournalEntries()
     nextTick(() => {
       scrollToBottom()
       calculateTextareaWidth()
@@ -638,7 +638,7 @@ function scrollToBottom(forceH5 = false) {
   scrollKey.value++
 }
 // Auto-scroll whenever a new message is added
-watch(() => store.messages, () => {
+watch(() => store.messages.length, () => {
   if (!isInitializing.value) scrollToBottom()
 }, { flush: 'post' })
 

@@ -5,3 +5,5 @@ dist/
 *.log
 .worktrees/
 server/data.db*
+.claude/
+project.private.config.json

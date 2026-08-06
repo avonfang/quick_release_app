@@ -64,10 +64,12 @@ const scrollKey = ref(0)
 const saving = ref(false)
 
 const statusBarHeight = ref(20)
+const windowHeight = ref(0)
 onMounted(() => {
   try {
     const sys = uni.getSystemInfoSync()
     statusBarHeight.value = (sys as any).statusBarHeight || 20
+    windowHeight.value = (sys as any).windowHeight || 0
   } catch { /* use default */ }
   startFlow()
 })
@@ -199,7 +201,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 </script>
 
 <template>
-  <view class="qc-page">
+  <view class="qc-page" :style="{ height: windowHeight + 'px' }">
     <!-- Nav -->
     <view class="qc-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
       <text class="qc-nav-back" @tap="goHome">← 觉察</text>
@@ -404,14 +406,10 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 
 <style scoped>
 .qc-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   flex-direction: column;
   background: #2A231D;
+  overflow: hidden;
 }
 
 /* ── Nav ── */

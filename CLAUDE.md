@@ -76,3 +76,4 @@ npm test                     # Jest 测试（18/18）
 - 全局 `uni` API 通过 `src/__tests__/setup.js` mock，不要删除
 - Sass 弃用警告可忽略 (Dart Sass legacy-js-api)
 - 微信 H5 通过 Vite proxy 转发 `/v1` 到 DeepSeek API
+- **每次代码修改后必须提交到 git**，保持小步提交，方便回退

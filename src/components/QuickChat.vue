@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   quickAIResponse,
   saveQuickRecord,
@@ -72,6 +72,12 @@ onMounted(() => {
     windowHeight.value = (sys as any).windowHeight || 0
   } catch { /* use default */ }
   startFlow()
+})
+
+const scrollHeight = computed(() => {
+  const navH = statusBarHeight.value + 44  // 44px = 88rpx
+  const inputH = (state.value === 'event' || state.value === 'thought') ? 54 : 0
+  return windowHeight.value - navH - inputH
 })
 
 function startFlow() {
@@ -220,6 +226,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
     <!-- Messages -->
     <scroll-view
       class="qc-scroll"
+      :style="{ height: scrollHeight + 'px' }"
       scroll-y
       :scroll-into-view="'qc-bottom-' + scrollKey"
       :scroll-with-animation="true"
@@ -478,7 +485,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 
 /* ── Scroll ── */
 .qc-scroll {
-  flex: 1;
+  flex-shrink: 0;
 }
 .qc-scroll-inner {
   padding: 16rpx 0 32rpx;

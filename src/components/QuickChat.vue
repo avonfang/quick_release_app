@@ -95,6 +95,17 @@ function onSelectEmotion(emotion: string) {
   nextTick(() => scrollToBottom())
 }
 
+function onCustomEmotion() {
+  const text = inputText.value.trim()
+  if (!text || state.value !== 'emotion') return
+  form.emotion = text
+  addMsg('ai', '嗨，你现在感觉怎么样？选一个最贴近此刻心情的吧')
+  addMsg('user', text)
+  inputText.value = ''
+  state.value = 'intensity'
+  nextTick(() => scrollToBottom())
+}
+
 function onSelectIntensity(v: number) {
   if (state.value !== 'intensity') return
   form.intensity = v
@@ -232,6 +243,24 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
             >
               <text class="qc-chip-emoji">{{ e.emoji }}</text>
               <text class="qc-chip-label">{{ e.label }}</text>
+            </view>
+          </view>
+          <view class="qc-custom-emotion">
+            <input
+              v-model="inputText"
+              class="qc-custom-emotion-input"
+              placeholder="都不贴切？输入你此刻的感受..."
+              placeholder-class="qc-custom-emotion-ph"
+              confirm-type="done"
+              @confirm="onCustomEmotion"
+            />
+            <view
+              class="qc-send qc-send--small"
+              :class="{ 'qc-send--ready': inputText.trim() }"
+              hover-class="qc-send--hover"
+              @tap="onCustomEmotion"
+            >
+              <text class="qc-send-text">确定</text>
             </view>
           </view>
         </template>
@@ -495,6 +524,40 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-chip-emoji { font-size: 36rpx; }
 .qc-chip-label { font-size: 28rpx; color: #FDFBF7; }
+
+/* ── Custom emotion input ── */
+.qc-custom-emotion {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 0 32rpx;
+  margin-bottom: 32rpx;
+}
+.qc-custom-emotion-input {
+  flex: 1;
+  height: 80rpx;
+  background: rgba(255,255,255,.04);
+  border: 1rpx solid rgba(255,255,255,.08);
+  border-radius: 40rpx;
+  padding: 0 28rpx;
+  font-size: 26rpx;
+  color: #FDFBF7;
+}
+.qc-custom-emotion-ph {
+  color: rgba(255,255,255,.15);
+  font-size: 26rpx;
+}
+.qc-send--small {
+  width: auto;
+  height: 80rpx;
+  padding: 0 28rpx;
+  border-radius: 40rpx;
+  background: rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
 /* ── Intensity bar ── */
 .qc-intensity {

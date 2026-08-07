@@ -396,7 +396,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
         <template v-if="state === 'sending'">
           <view class="qc-msg qc-msg--ai">
             <view class="qc-bubble qc-bubble--ai qc-bubble--loading">
-              <text class="qc-phase-tag">AI 回应</text>
+              <text class="qc-phase-tag">正在理解...</text>
               <view class="qc-dots">
                 <view class="qc-dot"></view>
                 <view class="qc-dot"></view>

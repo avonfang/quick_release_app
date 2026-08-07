@@ -164,12 +164,13 @@ router.post('/forgot-password', authLimiter, (req, res) => {
 
     db.prepare('INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)').run(email, token, expiresAt)
 
-    // In production, send email here. For now, return the link in response.
+    // In production, send email here. For now, return the link so the client can copy it.
     const resetUrl = `https://sumeru.online/reset-password?token=${token}`
     console.log(`[Password Reset] ${email} → ${resetUrl}`)
 
     res.json({
-      message: '如果该邮箱已注册，重置链接已发送。请在邮箱中查看。',
+      message: '重置链接已生成',
+      resetUrl,
     })
   } catch (err) {
     console.error('forgot-password error:', err)

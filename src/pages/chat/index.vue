@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { onBackPress, onHide, onShow } from '@dcloudio/uni-app'
-import { useSessionStore } from '@/stores/session'
+import { useSessionStore, STAGE_LABELS } from '@/stores/session'
 import { createSession, chatWithAI, saveCard } from '@/utils/cloud'
 
 import { isSupported as isVoiceSupported, getState as getVoiceState, getDuration as getVoiceDuration, startRecording, stopRecording, onStateChange } from '@/utils/voice'
@@ -163,11 +163,25 @@ const fallbackMessages: Record<string, string> = {
 
 // ─── Computed: Messages ───────────────────────────────────────────────────
 const displayMessages = computed(() => {
-  return store.messages.map((msg: any) => ({
-    type: 'message',
-    msg,
-    role: msg.role || '',
-  }))
+  const result: any[] = []
+  let prevStage = ''
+  store.messages.forEach((msg: any) => {
+    const msgStage = (msg as any).stage || ''
+    if (msgStage && msgStage !== prevStage) {
+      result.push({
+        type: 'separator',
+        stage: msgStage,
+        label: STAGE_LABELS[msgStage] || msgStage,
+      })
+      prevStage = msgStage
+    }
+    result.push({
+      type: 'message',
+      msg,
+      role: msg.role || '',
+    })
+  })
+  return result
 })
 
 // ─── Journal: current step for nav ────────────────────────────────────
@@ -428,17 +442,6 @@ function captureStageData(stage: string, text: string) {
       break
   }
 }
-
-// ─── 调试：追踪谁在添加用户消息 ──────────────────────────────────
-watch(() => store.messages.length, (len, oldLen) => {
-  if (len > oldLen) {
-    const msg = store.messages[len - 1]
-    if (msg.role === 'user') {
-      console.log('[DEBUG] 用户消息被添加:', JSON.stringify(msg.content))
-      console.log('[DEBUG] 当前 inputText:', JSON.stringify(inputText.value))
-    }
-  }
-})
 
 // ─── Send message ─────────────────────────────────────────────────────────
 async function sendMessage() {
@@ -936,8 +939,13 @@ onBackPress(() => {
 
       <!-- Messages -->
       <template v-for="(item, idx) in displayMessages" :key="idx">
+        <!-- Stage Separator -->
+        <view v-if="item.type === 'separator'" class="stage-tag">
+          <text class="stage-tag-text">{{ item.label }}</text>
+        </view>
+
         <!-- AI Message -->
-        <view v-if="item.role === 'assistant'" class="msg-row msg-row--ai">
+        <view v-else-if="item.role === 'assistant'" class="msg-row msg-row--ai">
           <AiBubble :content="item.msg.content" :timestamp="item.msg.timestamp" />
         </view>
 
@@ -1578,6 +1586,19 @@ onBackPress(() => {
 
 .chat-pad-top { height: 20rpx; }
 .chat-pad-bottom { height: 20rpx; }
+
+/* ── Stage separator ──────────────────────────────────────────────────── */
+.stage-tag {
+  display: flex;
+  justify-content: center;
+  padding: 32rpx 0 16rpx;
+}
+.stage-tag-text {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 2rpx;
+  font-weight: 500;
+}
 
 /* ── Message Rows ──────────────────────────────────────────────────────── */
 .msg-row {

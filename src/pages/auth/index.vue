@@ -103,10 +103,15 @@ async function sendReset() {
   error.value = ''
   successMsg.value = ''
   try {
-    const data = await api.post<{ message: string }>('/auth/forgot-password', {
+    const data = await api.post<{ message: string; resetUrl?: string }>('/auth/forgot-password', {
       email: resetEmail.value.trim(),
     })
-    successMsg.value = data.message
+    if (data.resetUrl) {
+      try { uni.setClipboardData({ data: data.resetUrl }) } catch {}
+      successMsg.value = data.message + '\n\n重置链接已复制到剪贴板，请在浏览器中打开完成重置。'
+    } else {
+      successMsg.value = data.message
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : '请求失败'
   } finally {
@@ -218,7 +223,7 @@ async function doReset() {
         <!-- ====== Forgot Password ====== -->
         <view v-else-if="mode === 'forgot'" class="form">
           <text class="form-title">重置密码</text>
-          <text class="form-desc">输入注册时使用的邮箱，我们将发送重置链接。</text>
+          <text class="form-desc">输入注册邮箱，重置链接将复制到剪贴板，请在浏览器中打开完成重置。</text>
           <input
             v-model="resetEmail"
             class="input"

@@ -393,10 +393,17 @@ export default {
     goQuick() {
       const hour = new Date().getHours()
       if (hour >= 20 || hour < 1) {
-        // 晚上直接进入 AI 对话
-        uni.navigateTo({ url: '/pages/chat/index' })
+        uni.showActionSheet({
+          itemList: ['3 分钟快速记录', '进行一次深度对话'],
+          success: (res) => {
+            if (res.tapIndex === 0) {
+              uni.navigateTo({ url: '/pages/quick/index' })
+            } else if (res.tapIndex === 1) {
+              uni.navigateTo({ url: '/pages/chat/index' })
+            }
+          },
+        })
       } else {
-        // 白天走四步快速觉察流程
         uni.navigateTo({ url: '/pages/quick/index' })
       }
     },

@@ -6,7 +6,7 @@ import { ref, computed } from 'vue'
  */
 const STAGES = ['event', 'emotion', 'thought', 'belief', 'loosen', 'release', 'awareness', 'action']
 
-const STAGE_LABELS = {
+export const STAGE_LABELS = {
   event: '记录事件',
   emotion: '感知情绪',
   thought: '识别想法',

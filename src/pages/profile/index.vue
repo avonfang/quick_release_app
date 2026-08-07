@@ -504,6 +504,12 @@ export default {
       uni.setStorageSync('purchasedThemes', purchasedThemes)
       // Auto-apply the theme
       uni.setStorageSync('appTheme', key)
+      // Propagate theme globally via store
+      try {
+        const { useThemeStore } = require('@/stores/theme')
+        const themeStore = useThemeStore()
+        themeStore.setTheme(key)
+      } catch {}
       coins.addCoins(-price, `解锁${key === 'ocean' ? '海洋' : '森林'}主题`)
 
       this.awakeningCoins = uni.getStorageSync('awakeningCoins') || 0

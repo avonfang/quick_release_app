@@ -45,7 +45,7 @@ const themeVars = computed(() => {
     '--separator': '#E8DDD0',
     '--typing-dot': '#B8AFA4',
     '--prog-dot': 'rgba(0, 0, 0, 0.08)',
-    '--send-btn': 'linear-gradient(135deg, #C49A6C, #B8885A)',
+    '--send-btn': 'linear-gradient(135deg, var(--theme-accent, #C49A6C), #B8885A)',
   }
 })
 
@@ -1216,7 +1216,7 @@ onBackPress(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #C49A6C, #B8885A);
+  background: linear-gradient(135deg, var(--theme-accent, #C49A6C), #B8885A);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1249,7 +1249,7 @@ onBackPress(() => {
 
 /* ── User bubble ── */
 .h5-msg-bubble {
-  background: linear-gradient(135deg, #C49A6C, #B8885A);
+  background: linear-gradient(135deg, var(--theme-accent, #C49A6C), #B8885A);
   border-radius: 16px 4px 16px 16px;
   padding: 14px 22px;
   max-width: 480px;
@@ -1271,7 +1271,7 @@ onBackPress(() => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #C49A6C, #B8885A);
+  background: linear-gradient(135deg, var(--theme-accent, #C49A6C), #B8885A);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1362,7 +1362,7 @@ onBackPress(() => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #C49A6C, #B8885A);
+  background: linear-gradient(135deg, var(--theme-accent, #C49A6C), #B8885A);
   display: flex;
   align-items: center;
   justify-content: center;

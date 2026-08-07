@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
+import { useThemeStore } from "@/stores/theme";
 
 onLaunch(() => {
   console.log("App Launch");
@@ -10,6 +11,10 @@ onLaunch(() => {
   if (typeof s.getStorageSync("hasSeenOnboarding") !== "boolean") s.setStorageSync("hasSeenOnboarding", false);
   if (typeof s.getStorageSync("streakDays") !== "number") s.setStorageSync("streakDays", 0);
   if (typeof s.getStorageSync("lastCheckInDate") !== "string") s.setStorageSync("lastCheckInDate", "");
+
+  // Initialize global theme
+  const themeStore = useThemeStore();
+  themeStore.init();
 });
 onShow(() => {
   console.log("App Show");
@@ -27,6 +32,10 @@ page {
   font-family: -apple-system, "PingFang SC", "SF Pro Text", "Helvetica Neue", sans-serif;
   font-size: 28rpx;
   line-height: 1.6;
+  /* Global theme variables — overridden by themeStore.applyGlobally() */
+  --theme-accent: #C49A6C;
+  --theme-accent-light: rgba(196, 154, 108, 0.15);
+  --theme-card-bg: #3E342B;
 }
 
 /* 衬线标题 */

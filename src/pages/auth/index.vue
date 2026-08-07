@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { api, setToken, isLoggedIn } from '@/utils/api'
-import { syncLocalToServer } from '@/utils/cloud'
+import { syncLocalToServer, loadUserState, syncUserState } from '@/utils/cloud'
 
 const mode = ref<'login' | 'register' | 'forgot' | 'reset'>('login')
 
@@ -55,7 +55,9 @@ async function handleWechatLogin() {
     const data = await api.post<{ token: string; user: { id: number } }>('/auth/wx-login', { code })
     setToken(data.token)
     uni.setStorageSync('userInfo', { userId: String(data.user.id) })
+    try { await loadUserState() } catch {}
     try { await syncLocalToServer() } catch (e) { console.warn('Sync failed:', e) }
+    try { await syncUserState() } catch {}
     uni.switchTab({ url: '/pages/profile/index' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : '微信登录失败'
@@ -83,8 +85,10 @@ async function submit() {
     setToken(data.token)
     uni.setStorageSync('userInfo', { userId: String(data.user.id), email: data.user.email })
 
-    // 同步本地记录到服务端
+    // 同步本地记录和状态到服务端
+    try { await loadUserState() } catch {}
     try { await syncLocalToServer() } catch (e) { console.warn('Sync failed:', e) }
+    try { await syncUserState() } catch {}
 
     uni.switchTab({ url: '/pages/profile/index' })
   } catch (e) {

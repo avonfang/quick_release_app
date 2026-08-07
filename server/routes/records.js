@@ -73,6 +73,31 @@ router.get('/', authMiddleware, (req, res) => {
   res.json({ data })
 })
 
+// GET /api/records/state — retrieve user state (coins, progress, checkin)
+router.get('/state', authMiddleware, (req, res) => {
+  const userId = req.user.userId
+  const row = db.prepare(
+    'SELECT state_json FROM user_state WHERE user_id = ?'
+  ).get(userId)
+  res.json({ state: row ? JSON.parse(row.state_json) : {} })
+})
+
+// POST /api/records/state — save user state (coins, progress, checkin)
+router.post('/state', authMiddleware, (req, res) => {
+  const userId = req.user.userId
+  const { state } = req.body
+  if (!state || typeof state !== 'object') {
+    return res.status(400).json({ error: 'state object required' })
+  }
+  const json = JSON.stringify(state)
+  db.prepare(`
+    INSERT INTO user_state (user_id, state_json, updated_at)
+    VALUES (?, ?, datetime('now'))
+    ON CONFLICT(user_id) DO UPDATE SET state_json = excluded.state_json, updated_at = datetime('now')
+  `).run(userId, json)
+  res.json({ saved: true })
+})
+
 // DELETE /api/records/:_id — delete a single record
 router.delete('/:id', authMiddleware, (req, res) => {
   const userId = req.user.userId

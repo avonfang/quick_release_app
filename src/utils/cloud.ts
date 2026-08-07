@@ -294,6 +294,110 @@ export async function syncLocalToServer(): Promise<number> {
   return count
 }
 
+const API_BASE_URL = typeof window !== 'undefined' ? '/api' : 'https://sumeru.online/api'
+
+function getAuthHeader() {
+  const token = getToken()
+  return token ? { Authorization: 'Bearer ' + token } : {}
+}
+
+/** 同步用户状态（金币、课程进度、签到）到服务端 */
+export async function syncUserState(): Promise<boolean> {
+  try {
+    const state: Record<string, any> = {}
+    // Coins
+    const coins = uni.getStorageSync('awakeningCoins')
+    if (coins != null) state.awakeningCoins = coins
+    const ledger = uni.getStorageSync('coinLedger')
+    if (ledger) state.coinLedger = ledger
+    // Checkin
+    const streakDays = uni.getStorageSync('streakDays')
+    if (streakDays != null) state.streakDays = streakDays
+    const lastCheckInDate = uni.getStorageSync('lastCheckInDate')
+    if (lastCheckInDate) state.lastCheckInDate = lastCheckInDate
+    // Course progress
+    const progress: Record<string, any> = {}
+    for (let i = 0; i < uni.getStorageInfoSync().keys.length; i++) {
+      const key = uni.getStorageInfoSync().keys[i]
+      if (key.startsWith('progress_') || key.startsWith('lesson_')) {
+        progress[key] = uni.getStorageSync(key)
+      }
+    }
+    state._progress = progress
+
+    const res = await uni.request({
+      url: API_BASE_URL + '/records/state',
+      method: 'POST',
+      header: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      data: { state },
+    })
+    return res.statusCode === 200
+  } catch { return false }
+}
+
+/** 从服务端加载用户状态并合并到本地 */
+export async function loadUserState(): Promise<boolean> {
+  try {
+    const res = await uni.request({
+      url: API_BASE_URL + '/records/state',
+      method: 'GET',
+      header: getAuthHeader(),
+    })
+    if (res.statusCode !== 200) return false
+    const state = (res.data as any).state
+    if (!state || Object.keys(state).length === 0) return true
+    // Merge: only set if local doesn't have higher value
+    if (state.awakeningCoins != null) {
+      const local = uni.getStorageSync('awakeningCoins') || 0
+      if (state.awakeningCoins > local) {
+        uni.setStorageSync('awakeningCoins', state.awakeningCoins)
+      }
+    }
+    if (state.streakDays != null) {
+      const local = uni.getStorageSync('streakDays') || 0
+      if (state.streakDays > local) {
+        uni.setStorageSync('streakDays', state.streakDays)
+      }
+    }
+    if (state.lastCheckInDate) {
+      const local = uni.getStorageSync('lastCheckInDate') || ''
+      if (state.lastCheckInDate > local) {
+        uni.setStorageSync('lastCheckInDate', state.lastCheckInDate)
+      }
+    }
+    // Coin ledger: merge
+    if (state.coinLedger) {
+      const local = uni.getStorageSync('coinLedger') || '[]'
+      const localArr = typeof local === 'string' ? JSON.parse(local) : local
+      const merged = mergeCoinLedgers(localArr, state.coinLedger)
+      uni.setStorageSync('coinLedger', JSON.stringify(merged))
+    }
+    // Course progress
+    if (state._progress) {
+      Object.entries(state._progress).forEach(([key, val]) => {
+        if (!uni.getStorageSync(key)) {
+          uni.setStorageSync(key, val)
+        }
+      })
+    }
+    return true
+  } catch { return false }
+}
+
+function mergeCoinLedgers(local: any[], server: any[]): any[] {
+  const seen = new Set<string>()
+  const merged: any[] = []
+  for (const entry of [...server, ...local]) {
+    const key = `${entry.time || ''}_${entry.source || ''}_${entry.amount || ''}`
+    if (!seen.has(key)) {
+      seen.add(key)
+      merged.push(entry)
+    }
+  }
+  merged.sort((a, b) => ((b.time || 0) - (a.time || 0)))
+  return merged
+}
+
 /** 合并本地和服务端记录（去重，保留较新版本） */
 export async function getMergedRecords(): Promise<any[]> {
   const raw = uni.getStorageSync('cards') || '[]'

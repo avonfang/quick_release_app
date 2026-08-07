@@ -364,7 +364,12 @@ export default {
 
     finish() {
       if (this._timer) clearTimeout(this._timer)
-      uni.navigateBack()
+      const pages = getCurrentPages()
+      if (pages.length <= 1) {
+        uni.switchTab({ url: '/pages/index/index' })
+      } else {
+        uni.navigateBack()
+      }
     },
 
     restart() {

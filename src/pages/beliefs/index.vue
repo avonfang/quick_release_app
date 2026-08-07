@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { getStatistics } from '@/utils/cloud'
-import { isLoggedIn } from '@/utils/api'
 
 interface BeliefItem {
   _id: string
@@ -14,10 +13,6 @@ const loading = ref(true)
 const statusBarHeight = ref(20)
 
 onMounted(async () => {
-  if (!isLoggedIn()) {
-    uni.reLaunch({ url: '/pages/auth/index' })
-    return
-  }
   try {
     const sys = uni.getSystemInfoSync()
     statusBarHeight.value = sys.statusBarHeight || 20

@@ -174,6 +174,7 @@
 import guides from '@/data/guides'
 import courses from '@/data/courses'
 import * as coins from '@/utils/coins'
+import { formatDate } from '@/utils/util'
 
 function svgDataUri(svg) {
   return 'data:image/svg+xml,' + encodeURIComponent(svg)
@@ -366,6 +367,7 @@ export default {
         recoveryMinutes,
         note: this.note,
         rating: this.rating,
+        timestamp: Date.now(),
         createdAt: new Date().toISOString()
       }
       const local = uni.getStorageSync('pendingEntries') || []
@@ -402,11 +404,15 @@ export default {
     },
 
     deepDialogue() {
-      uni.navigateTo({ url: '/pages/dialogue/index' })
+      uni.navigateTo({ url: '/pages/chat/index' })
     },
 
     onShareAppMessage() {
-      this.addCoin(1)
+      const today = formatDate(new Date())
+      if (uni.getStorageSync('shareRewardDate') !== today) {
+        uni.setStorageSync('shareRewardDate', today)
+        this.addCoin(1)
+      }
       return { title: '刚完成了一次情绪急救 🌿 推荐「此刻」给你', path: '/pages/quick/index' }
     }
   }

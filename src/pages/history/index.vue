@@ -2,7 +2,6 @@
 import { ref, reactive } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { deleteCard, getMergedRecords } from '@/utils/cloud'
-import { isLoggedIn } from '@/utils/api'
 
 interface HistoryRecord {
   _id: string
@@ -145,10 +144,6 @@ const goInsight = () => {
 }
 
 onShow(() => {
-  if (!isLoggedIn()) {
-    uni.reLaunch({ url: '/pages/auth/index' })
-    return
-  }
   loadHistory()
 })
 </script>

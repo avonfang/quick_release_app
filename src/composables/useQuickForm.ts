@@ -40,7 +40,7 @@ export function useQuickForm() {
   const totalSteps = STATE_ORDER.length
 
   function transition(to: QuickState) {
-    if (state.value !== 'sending') {
+    if (state.value !== 'sending' && state.value !== 'idle') {
       history.value.push(state.value)
     }
     state.value = to

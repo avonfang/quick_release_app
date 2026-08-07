@@ -140,6 +140,7 @@
 <script>
 import * as dialogue from '@/data/dialogue'
 import * as coins from '@/utils/coins'
+import { formatDate } from '@/utils/util'
 
 const DAILY_FREE_LIMIT = 5
 
@@ -206,7 +207,7 @@ export default {
     },
 
     checkDailyLimit() {
-      const today = new Date().toLocaleDateString('zh-CN')
+      const today = formatDate(new Date())
       const lastDate = uni.getStorageSync('dailyMsgDate') || ''
       const isPremium = uni.getStorageSync('isPremium') || false
 
@@ -403,13 +404,13 @@ export default {
     // Silent check-in, returns { streakDays, bonus }
     doCheckIn() {
       const lastDate = uni.getStorageSync('lastCheckInDate') || ''
-      const today = new Date().toLocaleDateString('zh-CN')
+      const today = formatDate(new Date())
       if (lastDate === today) {
         const streakDays = uni.getStorageSync('streakDays') || 0
         return { streakDays, bonus: 0 }
       }
 
-      const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('zh-CN')
+      const yesterday = formatDate(new Date(Date.now() - 86400000))
       const prevStreak = uni.getStorageSync('streakDays') || 0
       const streakDays = lastDate === yesterday ? prevStreak + 1 : 1
 

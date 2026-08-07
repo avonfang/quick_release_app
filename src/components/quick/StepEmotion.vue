@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { QUICK_EMOTIONS } from '@/utils/quick-record'
 
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   emotion: string
   intensity: number
 }>()
@@ -9,10 +11,17 @@ defineProps<{
 const emit = defineEmits<{
   'update:emotion': [value: string]
   'update:intensity': [value: number]
+  next: []
 }>()
+
+const canGoNext = computed(() => !!props.emotion)
 
 function selectEmotion(e: string) {
   emit('update:emotion', e)
+}
+
+function goNext() {
+  if (canGoNext.value) emit('next')
 }
 </script>
 
@@ -42,6 +51,13 @@ function selectEmotion(e: string) {
       >
         <text class="step-intensity-text" :class="{ 'step-intensity-text--on': i <= intensity }">{{ i }}</text>
       </view>
+    </view>
+    <view
+      class="step-btn"
+      :class="{ 'step-btn--ready': canGoNext }"
+      @tap="goNext"
+    >
+      <text class="step-btn-text">继续</text>
     </view>
   </view>
 </template>
@@ -79,6 +95,15 @@ function selectEmotion(e: string) {
 .step-intensity-dot--on { background: #C49A6C; }
 .step-intensity-text { font-size: 12px; color: #B8AFA4; font-weight: 500; }
 .step-intensity-text--on { color: #fff; }
+
+.step-btn {
+  height: 44px; border-radius: 60px; margin-top: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: #E8E0D8; cursor: pointer;
+  transition: all .3s cubic-bezier(.32,.72,0,1);
+}
+.step-btn--ready { background: linear-gradient(135deg, #C49A6C, #B8885A); }
+.step-btn-text { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: 2px; }
 
 @media (max-width: 480px) {
   .step { padding: 24px 18px 20px; }

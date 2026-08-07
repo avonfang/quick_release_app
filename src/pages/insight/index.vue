@@ -3,10 +3,6 @@ import { ref, onMounted } from 'vue'
 import { isLoggedIn } from '@/utils/api'
 
 onMounted(() => {
-  if (!isLoggedIn()) {
-    uni.reLaunch({ url: '/pages/auth/index' })
-    return
-  }
   loadUserInfo()
 })
 

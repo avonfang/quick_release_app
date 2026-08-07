@@ -28,7 +28,7 @@
 
       <scroll-view class="chip-scroll" scroll-x enable-flex>
         <view
-          :class="'chip ' + (selectedPattern === key ? 'active' : '') + (item.premium && !isPremium ? ' locked' : '')"
+          :class="'chip ' + (selectedPattern === key ? 'active' : '') + (patternItem.premium && !isPremium ? ' locked' : '')"
           v-for="(patternItem, key) in patternList" :key="patternItem.key"
           :data-key="patternItem.key" @tap="selectPattern"
         >
@@ -116,6 +116,7 @@
 
 <script>
 import * as coins from '@/utils/coins'
+import { formatDate } from '@/utils/util'
 
 const PATTERNS = {
   '478': { name: '4-7-8 放松', phases: [{ label: '吸气', sec: 4 }, { label: '屏息', sec: 7 }, { label: '呼气', sec: 8 }], icon: '🌙', desc: '经典的深度放松节奏', premium: false },
@@ -381,7 +382,11 @@ export default {
     },
 
     onShareAppMessage() {
-      coins.addCoins(1, '分享呼吸')
+      const today = formatDate(new Date())
+      if (uni.getStorageSync('shareRewardDate') !== today) {
+        uni.setStorageSync('shareRewardDate', today)
+        coins.addCoins(1, '分享呼吸')
+      }
       return { title: '刚做完一组呼吸，心很静 🧘', path: '/pages/breath/index' }
     }
   }

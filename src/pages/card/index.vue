@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useSessionStore } from '@/stores/session'
 import { saveCard } from '@/utils/cloud'
-import { isLoggedIn } from '@/utils/api'
 import { getActiveSections, COLORS, todayString } from '@/utils/card-share'
 
 const store = useSessionStore()
@@ -38,10 +37,6 @@ onLoad((query) => {
 })
 
 onMounted(() => {
-  if (!isLoggedIn()) {
-    uni.reLaunch({ url: '/pages/auth/index' })
-    return
-  }
   try {
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 44

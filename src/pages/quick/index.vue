@@ -146,8 +146,9 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
               v-else-if="state === 'emotion'"
               :emotion="form.emotion"
               :intensity="form.intensity"
-              @update:emotion="form.emotion = $event; transition('event')"
+              @update:emotion="form.emotion = $event"
               @update:intensity="form.intensity = $event"
+              @next="transition('event')"
             />
           </Transition>
         </view>

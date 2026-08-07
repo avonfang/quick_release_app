@@ -241,7 +241,7 @@ export default {
     },
 
     showRecommendation(path, lessonId) {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = util.formatDate(new Date())
       const todayPractices = uni.getStorageSync('todayPractices') || {}
       const todayCount = todayPractices[today] || 0
       const { weeklyMinutes, streakDays } = this.computeSummary()
@@ -286,16 +286,17 @@ export default {
       const count = uni.getStorageSync('practice_completed_count') || 0
       uni.setStorageSync('practice_completed_count', count + 1)
 
-      const today = new Date().toISOString().slice(0, 10)
+      const today = util.formatDate(new Date())
       const todayPractices = uni.getStorageSync('todayPractices') || {}
       todayPractices[today] = (todayPractices[today] || 0) + 1
       uni.setStorageSync('todayPractices', todayPractices)
 
       if (path && lessonId) {
-        util.completeLesson(path, lessonId)
+        const rewarded = util.completeLesson(path, lessonId)
+        if (rewarded) {
+          uni.showToast({ title: '+2 ❤️', icon: 'success' })
+        }
       }
-
-      uni.showToast({ title: '+2 ❤️', icon: 'success' })
 
       this.isComplete = true
       this.progressPercent = 100
@@ -310,7 +311,12 @@ export default {
     },
 
     onBack() {
-      uni.navigateBack()
+      const pages = getCurrentPages()
+      if (pages.length <= 1) {
+        uni.switchTab({ url: '/pages/index/index' })
+      } else {
+        uni.navigateBack()
+      }
     },
 
     goToPracticeTab() {
@@ -318,7 +324,7 @@ export default {
     },
 
     computeSummary() {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = util.formatDate(new Date())
       const todayPractices = uni.getStorageSync('todayPractices') || {}
       const todayCount = todayPractices[today] || 0
 

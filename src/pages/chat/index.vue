@@ -554,16 +554,6 @@ async function sendMessage() {
   }
 }
 
-// ─── Streaming: skip ─────────────────────────────────────────────────
-function skipQuestion() {
-  if (isLoading.value || isStreaming.value) return
-  const stage = store.stage
-  store.addMessage({ role: 'user', content: '（跳过）', stage })
-  const reply = fallbackMessages[stage] || '好的，我们继续。'
-  startStreaming(reply, stage)
-  store.advanceStage()
-}
-
 /** 停止 AI 生成并撤回上一条消息 */
 function stopGeneration() {
   // Stop API call if in progress
@@ -1009,13 +999,6 @@ onBackPress(() => {
           @tap="submitChatMessage"
         >
           <text class="send-icon">↑</text>
-        </view>
-        <view
-          class="skip-link"
-          :class="{ 'skip-link--off': isLoading || isStreaming }"
-          @tap="skipQuestion"
-        >
-          <text class="skip-text">跳过</text>
         </view>
       </view>
     </view>
@@ -1732,19 +1715,7 @@ onBackPress(() => {
   font-size: 22rpx;
 }
 
-.skip-link {
-  padding: 2rpx 0;
-}
 
-.skip-link--off {
-  opacity: 0.25;
-  pointer-events: none;
-}
-
-.skip-text {
-  font-size: 20rpx;
-  color: var(--text-secondary);
-}
 
 /* ── Scroll Anchor ─────────────────────────────────────────────────────── */
 .scroll-anchor {

@@ -459,11 +459,11 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   z-index: 1;
 }
 .qc-nav-back-icon {
-  font-size: 36rpx;
+  font-size: 38rpx;
   color: #C49A6C;
 }
 .qc-nav-back-label {
-  font-size: 28rpx;
+  font-size: 32rpx;
   color: #C49A6C;
 }
 .qc-nav-center {
@@ -475,7 +475,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   align-items: center;
 }
 .qc-nav-title {
-  font-size: 34rpx;
+  font-size: 36rpx;
   font-weight: 600;
   color: #FDFBF7;
   letter-spacing: 4rpx;
@@ -500,25 +500,26 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 /* ── Message rows ── */
 .qc-msg {
   display: flex;
-  padding: 0 32rpx;
-  margin-bottom: 32rpx;
+  padding: 0 30rpx;
+  margin-bottom: 24rpx;
 }
 .qc-msg--ai { justify-content: flex-start; }
-.qc-msg--user { justify-content: flex-end; }
+.qc-msg--user { justify-content: flex-end; padding-left: 120rpx; }
 
 /* ── Bubbles ── */
 .qc-bubble {
-  max-width: 82%;
-  padding: 24rpx 32rpx;
-  border-radius: 36rpx;
+  max-width: 100%;
+  padding: 22rpx 28rpx;
+  border-radius: 16px;
 }
 .qc-bubble--ai {
+  max-width: 70%;
   background: rgba(255,255,255,.08);
-  border-bottom-left-radius: 12rpx;
+  border-bottom-left-radius: 4px;
 }
 .qc-bubble--user {
-  background: linear-gradient(135deg, #C49A6C, #B8885A);
-  border-bottom-right-radius: 12rpx;
+  background: linear-gradient(135deg, #C69C6D, #B8885A);
+  border-bottom-right-radius: 4px;
 }
 .qc-bubble--loading {
   display: flex;
@@ -527,7 +528,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   min-width: 160rpx;
 }
 .qc-bubble-text {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #FDFBF7;
   line-height: 1.7;
   word-break: break-word;
@@ -539,7 +540,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 /* ── Phase tag in bubble ── */
 .qc-phase-tag {
   display: block;
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: rgba(255,255,255,.25);
   letter-spacing: 2rpx;
   margin-bottom: 8rpx;
@@ -569,8 +570,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
-  padding: 0 32rpx;
-  margin-bottom: 32rpx;
+  padding: 0 30rpx;
+  margin-bottom: 24rpx;
 }
 .qc-chip {
   display: flex;
@@ -585,36 +586,35 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   background: rgba(255,255,255,.12);
   border-color: rgba(255,255,255,.18);
 }
-.qc-chip-emoji { font-size: 36rpx; }
+.qc-chip-emoji { font-size: 34rpx; }
 .qc-chip-label { font-size: 28rpx; color: #FDFBF7; }
 
 /* ── Custom emotion input ── */
 .qc-custom-emotion {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 0 32rpx;
-  margin-bottom: 32rpx;
+  gap: 12rpx;
+  padding: 0 30rpx;
+  margin-bottom: 24rpx;
 }
 .qc-custom-emotion-input {
   flex: 1;
   height: 80rpx;
-  background: rgba(255,255,255,.04);
-  border: 1rpx solid rgba(255,255,255,.08);
-  border-radius: 40rpx;
-  padding: 0 28rpx;
-  font-size: 26rpx;
+  background: rgba(255,255,255,.08);
+  border-radius: 20rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
   color: #FDFBF7;
 }
 .qc-custom-emotion-ph {
-  color: rgba(255,255,255,.15);
-  font-size: 26rpx;
+  color: rgba(255,255,255,.25);
+  font-size: 28rpx;
 }
 .qc-send--small {
   width: auto;
   height: 80rpx;
   padding: 0 28rpx;
-  border-radius: 40rpx;
+  border-radius: 20rpx;
   background: rgba(255,255,255,.08);
   display: flex;
   align-items: center;
@@ -626,8 +626,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-intensity {
   display: flex;
   gap: 8rpx;
-  padding: 0 32rpx;
-  margin-bottom: 32rpx;
+  padding: 0 30rpx;
+  margin-bottom: 24rpx;
 }
 .qc-intensity-dot {
   flex: 1;
@@ -651,8 +651,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-fw {
   display: flex;
   gap: 20rpx;
-  padding: 0 32rpx;
-  margin-bottom: 32rpx;
+  padding: 0 30rpx;
+  margin-bottom: 24rpx;
 }
 .qc-fw-btn {
   flex: 1;
@@ -676,23 +676,22 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 /* ── Result ── */
 .qc-result {
   background: rgba(255,255,255,.04);
-  border: 2rpx solid rgba(255,255,255,.05);
-  border-radius: 28rpx;
-  padding: 32rpx;
-  margin: 0 32rpx 32rpx;
+  border-radius: 16px;
+  padding: 28rpx;
+  margin: 0 30rpx 24rpx;
 }
 .qc-result-section { margin-bottom: 20rpx; }
 .qc-result-label {
   display: block;
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: rgba(255,255,255,.25);
   letter-spacing: 2rpx;
   margin-bottom: 8rpx;
 }
 .qc-result-text {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #FDFBF7;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 .qc-result-divider {
   height: 2rpx;
@@ -702,7 +701,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-result-ai {
   font-size: 28rpx;
   color: #FDFBF7;
-  line-height: 1.85;
+  line-height: 1.7;
   display: block;
 }
 .qc-cursor {
@@ -735,8 +734,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-deep--hover { opacity: .7; }
 .qc-deep-text {
-  font-size: 26rpx;
-  color: rgba(255,255,255,.2);
+  font-size: 28rpx;
+  color: rgba(255,255,255,.25);
   letter-spacing: 2rpx;
 }
 
@@ -744,31 +743,29 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-input-bar {
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  padding: 20rpx 28rpx;
-  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  gap: 12rpx;
+  padding: 12rpx 24rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   background: #2A231D;
-  border-top: 2rpx solid rgba(255,255,255,.06);
+  border-top: 1rpx solid rgba(255,255,255,.06);
   flex-shrink: 0;
 }
 .qc-input {
   flex: 1;
-  height: 88rpx;
-  background: rgba(255,255,255,.06);
-  border: 2rpx solid rgba(255,255,255,.08);
-  border-radius: 44rpx;
-  padding: 0 32rpx;
+  height: 80rpx;
+  background: rgba(255,255,255,.08);
+  border-radius: 20rpx;
+  padding: 0 24rpx;
   font-size: 28rpx;
   color: #FDFBF7;
 }
 .qc-input-ph {
-  color: rgba(255,255,255,.18);
+  color: rgba(255,255,255,.25);
   font-size: 28rpx;
 }
 .qc-send {
-  width: 88rpx;
-  height: 88rpx;
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 50%;
   background: rgba(255,255,255,.08);
   display: flex;
@@ -778,7 +775,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-send--hover { opacity: .8; }
 .qc-send--ready {
-  background: linear-gradient(135deg, #C49A6C, #B8885A);
+  background: linear-gradient(135deg, #C69C6D, #B8885A);
 }
 .qc-send-text {
   font-size: 28rpx;

@@ -170,13 +170,16 @@ export interface PatternSummary {
   commonThoughts: string[]
   recordCount: number
   periodDays: number
+  factCount: number
+  worryCount: number
+  avgIntensity: number
 }
 
 /** 从最近的快速记录生成模式摘要 */
 export function getPatternSummary(days = 14): PatternSummary {
   const records = getQuickRecords()
   if (records.length === 0) {
-    return { topEmotion: { label: '', count: 0 }, emotionDistribution: [], commonThoughts: [], recordCount: 0, periodDays: days }
+    return { topEmotion: { label: '', count: 0 }, emotionDistribution: [], commonThoughts: [], recordCount: 0, periodDays: days, factCount: 0, worryCount: 0, avgIntensity: 0 }
   }
 
   const cutoff = Date.now() - days * 86400000
@@ -203,11 +206,97 @@ export function getPatternSummary(days = 14): PatternSummary {
   })
   const commonThoughts = Array.from(thoughtSet).slice(0, 3)
 
+  // Fact/worry ratio
+  let factCount = 0
+  let worryCount = 0
+  recent.forEach(r => {
+    if (r.isFactOrWorry === 'fact') factCount++
+    else if (r.isFactOrWorry === 'worry') worryCount++
+  })
+
+  // Average intensity
+  const avgIntensity = total > 0
+    ? Math.round(recent.reduce((s, r) => s + r.intensity, 0) / total * 10) / 10
+    : 0
+
   return {
     topEmotion: distribution[0] || { label: '', count: 0 },
     emotionDistribution: distribution,
     commonThoughts,
     recordCount: recent.length,
     periodDays: days,
+    factCount,
+    worryCount,
+    avgIntensity,
+  }
+}
+
+/** 按周分组统计强度趋势 */
+export interface IntensityTrend {
+  weeks: Array<{
+    label: string
+    avgIntensity: number
+    count: number
+    topEmotion: string
+  }>
+}
+
+export function getIntensityTrend(weeks = 4): IntensityTrend {
+  const records = getQuickRecords()
+  const now = Date.now()
+  const weekData: Array<{ sum: number; count: number; emotions: Record<string, number> }> = []
+
+  for (let w = 0; w < weeks; w++) {
+    const weekStart = now - (w + 1) * 7 * 86400000
+    const weekEnd = now - w * 7 * 86400000
+    const weekRecords = records.filter(r => r.timestamp >= weekStart && r.timestamp < weekEnd)
+
+    let sum = 0
+    const emotions: Record<string, number> = {}
+    weekRecords.forEach(r => {
+      sum += r.intensity
+      emotions[r.emotion] = (emotions[r.emotion] || 0) + 1
+    })
+
+    let topEmotion = ''
+    let topCount = 0
+    Object.entries(emotions).forEach(([k, v]) => {
+      if (v > topCount) { topCount = v; topEmotion = k }
+    })
+
+    const d = new Date(weekEnd - 86400000)
+    weekData.push({
+      sum,
+      count: weekRecords.length,
+      emotions,
+      label: `${d.getMonth() + 1}/${d.getDate()}`,
+      topEmotion,
+    })
+  }
+
+  return {
+    weeks: weekData.reverse().map(w => ({
+      label: w.label,
+      avgIntensity: w.count > 0 ? Math.round(w.sum / w.count * 10) / 10 : 0,
+      count: w.count,
+      topEmotion: w.topEmotion,
+    })),
+  }
+}
+
+/** 获取事实/担心比率趋势 */
+export function getFactWorryRatio(days = 30): { factPct: number; worryPct: number; total: number } {
+  const records = getQuickRecords()
+  const cutoff = Date.now() - days * 86400000
+  const recent = records.filter(r => r.timestamp >= cutoff && r.isFactOrWorry)
+
+  const total = recent.length
+  if (total === 0) return { factPct: 0, worryPct: 0, total: 0 }
+
+  const factCount = recent.filter(r => r.isFactOrWorry === 'fact').length
+  return {
+    factPct: Math.round(factCount / total * 100),
+    worryPct: Math.round((total - factCount) / total * 100),
+    total,
   }
 }

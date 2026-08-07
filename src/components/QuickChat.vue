@@ -5,6 +5,7 @@ import {
   saveQuickRecord,
   getQuickRecords,
   getPatternSummary,
+  getFactWorryRatio,
   QUICK_EMOTIONS,
 } from '@/utils/quick-record'
 import type { QuickRecord, PatternSummary } from '@/utils/quick-record'
@@ -279,8 +280,9 @@ async function onSelectFactWorry(fw: 'fact' | 'worry') {
     aiResponse.value = '谢谢你的记录。'
   }
 
-  // Compute 14-day pattern summary
+  // Compute 14-day pattern summary + trend data
   patternSummary.value = getPatternSummary(14)
+  const fwRatio = getFactWorryRatio(30)
 
   state.value = 'result'
   saving.value = false
@@ -508,6 +510,14 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
             <view class="qc-pattern-row" v-if="patternSummary.topEmotion.label">
               <text class="qc-pattern-tag">最常见</text>
               <text class="qc-pattern-val">{{ patternSummary.topEmotion.label }}（{{ patternSummary.topEmotion.count }}次）</text>
+            </view>
+            <view class="qc-pattern-row" v-if="patternSummary.avgIntensity > 0">
+              <text class="qc-pattern-tag">平均强度</text>
+              <text class="qc-pattern-val">{{ patternSummary.avgIntensity }}/10</text>
+            </view>
+            <view class="qc-pattern-row" v-if="fwRatio.total > 0">
+              <text class="qc-pattern-tag">近30天</text>
+              <text class="qc-pattern-val">事实 {{ fwRatio.factPct }}% · 担心 {{ fwRatio.worryPct }}%</text>
             </view>
             <view class="qc-pattern-chips" v-if="patternSummary.emotionDistribution.length > 0">
               <view

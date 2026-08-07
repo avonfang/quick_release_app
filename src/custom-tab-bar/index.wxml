@@ -1,4 +1,4 @@
-<view class="tab-bar">
+<view class="tab-bar {{isDark ? 'tab-bar--dark' : 'tab-bar--light'}}">
   <view
     class="tab-item {{active === index ? 'active' : ''}}"
     wx:for="{{tabs}}"

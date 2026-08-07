@@ -29,6 +29,7 @@ const themeVars = computed(() => {
       '--border': 'rgba(255, 255, 255, 0.06)',
       '--separator': 'rgba(255, 255, 255, 0.08)',
       '--typing-dot': 'rgba(255, 255, 255, 0.3)',
+      '--prog-dot': 'rgba(255, 255, 255, 0.12)',
       '--send-btn': 'linear-gradient(135deg, #C69C6D, #B8885A)',
     }
   }
@@ -43,6 +44,7 @@ const themeVars = computed(() => {
     '--border': 'rgba(0, 0, 0, 0.05)',
     '--separator': '#E8DDD0',
     '--typing-dot': '#B8AFA4',
+    '--prog-dot': 'rgba(0, 0, 0, 0.08)',
     '--send-btn': 'linear-gradient(135deg, #C49A6C, #B8885A)',
   }
 })
@@ -1539,7 +1541,7 @@ onBackPress(() => {
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--prog-dot);
   transition: all 0.3s;
 }
 

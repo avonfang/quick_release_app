@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   quickAIResponse,
   saveQuickRecord,
@@ -63,6 +63,40 @@ const inputText = ref('')
 const scrollTopVal = ref(0)
 const saving = ref(false)
 
+// ── Day/Night theme ──
+const isDark = ref(true)
+const themeVars = computed(() => {
+  if (isDark.value) {
+    return {
+      '--qc-bg': '#2A231D',
+      '--qc-text': '#FDFBF7',
+      '--qc-bubble-ai': 'rgba(255,255,255,0.08)',
+      '--qc-border': 'rgba(255,255,255,0.06)',
+      '--qc-card': 'rgba(255,255,255,0.04)',
+      '--qc-dim': 'rgba(255,255,255,0.25)',
+      '--qc-placeholder': 'rgba(255,255,255,0.18)',
+      '--qc-accent': 'linear-gradient(135deg, #C69C6D, #B8885A)',
+      '--qc-accent-solid': '#C69C6D',
+    }
+  }
+  return {
+    '--qc-bg': '#F8F5F0',
+    '--qc-text': '#1C1A17',
+    '--qc-bubble-ai': '#EDE8E0',
+    '--qc-border': 'rgba(0,0,0,0.05)',
+    '--qc-card': '#FFFFFF',
+    '--qc-dim': '#B8AFA4',
+    '--qc-placeholder': '#C4B8AC',
+    '--qc-accent': 'linear-gradient(135deg, #C49A6C, #B8885A)',
+    '--qc-accent-solid': '#C49A6C',
+  }
+})
+
+function updateTheme() {
+  const hour = new Date().getHours()
+  isDark.value = hour < 6 || hour >= 18
+}
+
 const statusBarHeight = ref(20)
 const windowHeight = ref(0)
 const rpxRatio = ref(0.5)  // px per rpx
@@ -75,6 +109,7 @@ onMounted(() => {
     windowHeight.value = (sys as any).windowHeight || 0
     rpxRatio.value = ((sys as any).windowWidth || 375) / 750
   } catch { /* use default */ }
+  updateTheme()
   startFlow()
 })
 
@@ -214,7 +249,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 </script>
 
 <template>
-  <view class="qc-page" :style="{ height: windowHeight + 'px' }">
+  <view class="qc-page" :style="{ ...themeVars, height: windowHeight + 'px' }">
     <!-- Nav -->
     <view class="qc-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="qc-nav-inner">
@@ -430,7 +465,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-page {
   display: flex;
   flex-direction: column;
-  background: #2A231D;
+  background: var(--qc-bg);
   overflow: hidden;
 }
 
@@ -440,8 +475,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  background: #2A231D;
-  border-bottom: 1rpx solid rgba(255,255,255,.06);
+  background: var(--qc-bg);
+  border-bottom: 1rpx solid var(--qc-border);
 }
 .qc-nav-inner {
   display: flex;
@@ -460,11 +495,11 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-nav-back-icon {
   font-size: 38rpx;
-  color: #C49A6C;
+  color: var(--qc-accent-solid);
 }
 .qc-nav-back-label {
   font-size: 32rpx;
-  color: #C49A6C;
+  color: var(--qc-accent-solid);
 }
 .qc-nav-center {
   position: absolute;
@@ -477,7 +512,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-nav-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #FDFBF7;
+  color: var(--qc-text);
   letter-spacing: 4rpx;
   white-space: nowrap;
 }
@@ -514,11 +549,11 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-bubble--ai {
   max-width: 70%;
-  background: rgba(255,255,255,.08);
+  background: var(--qc-bubble-ai);
   border-bottom-left-radius: 4px;
 }
 .qc-bubble--user {
-  background: linear-gradient(135deg, #C69C6D, #B8885A);
+  background: var(--qc-accent);
   border-bottom-right-radius: 4px;
 }
 .qc-bubble--loading {
@@ -529,7 +564,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-bubble-text {
   font-size: 28rpx;
-  color: #FDFBF7;
+  color: var(--qc-text);
   line-height: 1.7;
   word-break: break-word;
 }
@@ -541,7 +576,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-phase-tag {
   display: block;
   font-size: 22rpx;
-  color: rgba(255,255,255,.25);
+  color: var(--qc-dim);
   letter-spacing: 2rpx;
   margin-bottom: 8rpx;
 }
@@ -555,7 +590,8 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   width: 14rpx;
   height: 14rpx;
   border-radius: 50%;
-  background: rgba(255,255,255,.3);
+  background: var(--qc-accent-solid);
+  opacity: 0.5;
   animation: qcDotPulse 1.4s ease-in-out infinite;
 }
 .qc-dot:nth-child(2) { animation-delay: .2s; }
@@ -579,15 +615,14 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   gap: 8rpx;
   padding: 20rpx 32rpx;
   border-radius: 48rpx;
-  background: rgba(255,255,255,.06);
-  border: 2rpx solid rgba(255,255,255,.1);
+  background: var(--qc-bubble-ai);
+  border: 2rpx solid var(--qc-border);
 }
 .qc-chip--hover {
-  background: rgba(255,255,255,.12);
-  border-color: rgba(255,255,255,.18);
+  opacity: 0.7;
 }
 .qc-chip-emoji { font-size: 34rpx; }
-.qc-chip-label { font-size: 28rpx; color: #FDFBF7; }
+.qc-chip-label { font-size: 28rpx; color: var(--qc-text); }
 
 /* ── Custom emotion input ── */
 .qc-custom-emotion {
@@ -600,14 +635,14 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-custom-emotion-input {
   flex: 1;
   height: 80rpx;
-  background: rgba(255,255,255,.08);
+  background: var(--qc-bubble-ai);
   border-radius: 20rpx;
   padding: 0 24rpx;
   font-size: 28rpx;
-  color: #FDFBF7;
+  color: var(--qc-text);
 }
 .qc-custom-emotion-ph {
-  color: rgba(255,255,255,.25);
+  color: var(--qc-placeholder);
   font-size: 28rpx;
 }
 .qc-send--small {
@@ -615,7 +650,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   height: 80rpx;
   padding: 0 28rpx;
   border-radius: 20rpx;
-  background: rgba(255,255,255,.08);
+  background: var(--qc-bubble-ai);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -633,16 +668,16 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   flex: 1;
   height: 80rpx;
   border-radius: 16rpx;
-  background: rgba(255,255,255,.06);
+  background: var(--qc-bubble-ai);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.qc-intensity-dot--hover { background: rgba(255,255,255,.1); }
-.qc-intensity-dot--on { background: #C49A6C; }
+.qc-intensity-dot--hover { opacity: 0.7; }
+.qc-intensity-dot--on { background: var(--qc-accent-solid); }
 .qc-intensity-num {
   font-size: 24rpx;
-  color: rgba(255,255,255,.3);
+  color: var(--qc-dim);
   font-weight: 500;
 }
 .qc-intensity-num--on { color: #fff; }
@@ -662,20 +697,17 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   gap: 8rpx;
   padding: 36rpx 24rpx;
   border-radius: 28rpx;
-  background: rgba(255,255,255,.05);
-  border: 2rpx solid rgba(255,255,255,.06);
+  background: var(--qc-bubble-ai);
+  border: 2rpx solid var(--qc-border);
 }
-.qc-fw-btn--hover {
-  background: rgba(255,255,255,.1);
-  border-color: rgba(196,154,108,.2);
-}
-.qc-fw-icon { font-size: 44rpx; color: #C49A6C; }
-.qc-fw-label { font-size: 28rpx; color: #FDFBF7; font-weight: 500; }
-.qc-fw-desc { font-size: 22rpx; color: rgba(255,255,255,.25); }
+.qc-fw-btn--hover { opacity: 0.7; }
+.qc-fw-icon { font-size: 44rpx; color: var(--qc-accent-solid); }
+.qc-fw-label { font-size: 28rpx; color: var(--qc-text); font-weight: 500; }
+.qc-fw-desc { font-size: 22rpx; color: var(--qc-dim); }
 
 /* ── Result ── */
 .qc-result {
-  background: rgba(255,255,255,.04);
+  background: var(--qc-card);
   border-radius: 16px;
   padding: 28rpx;
   margin: 0 30rpx 24rpx;
@@ -684,28 +716,28 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-result-label {
   display: block;
   font-size: 22rpx;
-  color: rgba(255,255,255,.25);
+  color: var(--qc-dim);
   letter-spacing: 2rpx;
   margin-bottom: 8rpx;
 }
 .qc-result-text {
   font-size: 28rpx;
-  color: #FDFBF7;
+  color: var(--qc-text);
   line-height: 1.7;
 }
 .qc-result-divider {
   height: 2rpx;
-  background: rgba(255,255,255,.06);
+  background: var(--qc-border);
   margin: 28rpx 0;
 }
 .qc-result-ai {
   font-size: 28rpx;
-  color: #FDFBF7;
+  color: var(--qc-text);
   line-height: 1.7;
   display: block;
 }
 .qc-cursor {
-  color: #C49A6C;
+  color: var(--qc-accent-solid);
   animation: qcBlink .8s infinite;
 }
 @keyframes qcBlink {
@@ -722,7 +754,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-retry--hover { opacity: .7; }
 .qc-retry-text {
   font-size: 28rpx;
-  color: #C49A6C;
+  color: var(--qc-accent-solid);
   font-weight: 500;
 }
 
@@ -735,7 +767,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 .qc-deep--hover { opacity: .7; }
 .qc-deep-text {
   font-size: 28rpx;
-  color: rgba(255,255,255,.25);
+  color: var(--qc-dim);
   letter-spacing: 2rpx;
 }
 
@@ -746,28 +778,28 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   gap: 12rpx;
   padding: 12rpx 24rpx;
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
-  background: #2A231D;
-  border-top: 1rpx solid rgba(255,255,255,.06);
+  background: var(--qc-bg);
+  border-top: 1rpx solid var(--qc-border);
   flex-shrink: 0;
 }
 .qc-input {
   flex: 1;
   height: 80rpx;
-  background: rgba(255,255,255,.08);
+  background: var(--qc-bubble-ai);
   border-radius: 20rpx;
   padding: 0 24rpx;
   font-size: 28rpx;
-  color: #FDFBF7;
+  color: var(--qc-text);
 }
 .qc-input-ph {
-  color: rgba(255,255,255,.25);
+  color: var(--qc-placeholder);
   font-size: 28rpx;
 }
 .qc-send {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background: rgba(255,255,255,.08);
+  background: var(--qc-bubble-ai);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -775,7 +807,7 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
 }
 .qc-send--hover { opacity: .8; }
 .qc-send--ready {
-  background: linear-gradient(135deg, #C69C6D, #B8885A);
+  background: var(--qc-accent);
 }
 .qc-send-text {
   font-size: 28rpx;

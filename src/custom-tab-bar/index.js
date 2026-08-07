@@ -1,6 +1,7 @@
 Component({
   data: {
     active: -1,
+    isDark: true,
     tabs: [
       { icon: '🏠', label: '首页', pagePath: '/pages/index/index' },
       { icon: '🧘', label: '练习', pagePath: '/pages/practice/index' },
@@ -11,17 +12,24 @@ Component({
 
   lifetimes: {
     attached() {
+      this.updateTheme()
       this.syncActive()
     }
   },
 
   pageLifetimes: {
     show() {
+      this.updateTheme()
       this.syncActive()
     }
   },
 
   methods: {
+    updateTheme() {
+      const hour = new Date().getHours()
+      this.setData({ isDark: hour < 6 || hour >= 18 })
+    },
+
     syncActive() {
       const pages = getCurrentPages()
       const page = pages[pages.length - 1]

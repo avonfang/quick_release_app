@@ -287,7 +287,7 @@
 
     <!-- Export -->
     <view class="export-area">
-      <view class="btn btn-outline btn-md" @tap="exportData">导出日志数据</view>
+      <view class="btn btn-outline btn-md" @tap="exportData">复制日志数据</view>
     </view>
   </view>
 </template>
@@ -579,14 +579,33 @@ export default {
     exportData() {
       const entries = uni.getStorageSync('pendingEntries') || []
       const dialogues = uni.getStorageSync('dialogueHistory') || []
+      const quickRecords = (() => {
+        try { return JSON.parse(uni.getStorageSync('quickRecords') || '[]') } catch { return [] }
+      })()
+      const cards = (() => {
+        try { return JSON.parse(uni.getStorageSync('cards') || '[]') } catch { return [] }
+      })()
+      const ledger = coins.getLedger()
+      const progress = util.getAllCourseProgress()
 
-      let text = '=== 此刻 · 我的练习日志 ===\n'
+      let text = '=== 看见此刻 · 我的练习日志 ===\n'
       text += `导出时间：${new Date().toLocaleString('zh-CN')}\n`
       text += `连续练习：${this.streakDays} 天\n`
-      text += `急救次数：${entries.length} 次\n`
-      text += `信件次数：${dialogues.length} 次\n`
       text += `完成课程：${this.totalLessons} 课\n`
-      text += `❤️ 心意：${this.awakeningCoins}\n\n`
+      text += `❤️ 心意：${this.awakeningCoins}\n`
+      text += `急救：${entries.length} 次 · 信件：${dialogues.length} 封 · 快速记录：${quickRecords.length} 条\n\n`
+
+      if (quickRecords.length > 0) {
+        text += '--- 快速觉察记录 ---\n'
+        quickRecords.forEach((r, i) => {
+          const date = r.timestamp ? new Date(r.timestamp).toLocaleString('zh-CN') : '未知时间'
+          text += `${i + 1}. [${date}] ${r.emotion}（${r.intensity}/10）\n`
+          if (r.event) text += `   事件：${r.event}\n`
+          if (r.thought) text += `   想法：${r.thought}\n`
+          if (r.isFactOrWorry) text += `   判断：${r.isFactOrWorry === 'fact' ? '更像事实' : '更像担心'}\n`
+        })
+        text += '\n'
+      }
 
       if (entries.length > 0) {
         text += '--- 情绪急救记录 ---\n'
@@ -609,6 +628,33 @@ export default {
           text += `${i + 1}. [${date}]`
           if (d.preview) text += ` 「${d.preview}」`
           text += '\n'
+        })
+        text += '\n'
+      }
+
+      if (cards.length > 0) {
+        text += '--- 觉察卡片 ---\n'
+        cards.forEach((c, i) => {
+          const date = c.createdAt ? new Date(c.createdAt).toLocaleString('zh-CN') : '未知时间'
+          text += `${i + 1}. [${date}]`
+          if (c.emotion) text += ` ${c.emotion}`
+          text += '\n'
+        })
+        text += '\n'
+      }
+
+      if (ledger.length > 0) {
+        text += '--- 心意明细 ---\n'
+        ledger.forEach((l) => {
+          text += `+${l.amount} ${l.source} · ${util.formatTime(l.time)}\n`
+        })
+        text += '\n'
+      }
+
+      if (Object.keys(progress).length > 0) {
+        text += '--- 课程进度 ---\n'
+        Object.entries(progress).forEach(([course, lessons]) => {
+          text += `${course}：${Object.keys(lessons).length} 课完成\n`
         })
       }
 

@@ -36,6 +36,8 @@ const asrLimiter = rateLimit({
 app.use('/api/auth', require('./routes/auth'))
 // Records routes (sync to server)
 app.use('/api/records', require('./routes/records'))
+// Dialogue quota routes (server-side daily limit)
+app.use('/api/dialogue', require('./routes/dialogue'))
 // ASR routes (Baidu speech recognition) — with rate limit
 app.use('/api', asrLimiter, require('./routes/asr'))
 // Chat routes (proxy to DeepSeek) — with rate limit

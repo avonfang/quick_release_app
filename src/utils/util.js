@@ -37,6 +37,16 @@ export function getCourseProgress(path) {
   return completed
 }
 
+/** 获取所有课程的进度快照 */
+export function getAllCourseProgress() {
+  const result = {}
+  Object.keys(courses).forEach(path => {
+    const completed = getCourseProgress(path)
+    if (completed > 0) result[path] = completed
+  })
+  return result
+}
+
 /** 标记课程完成并更新进度 */
 export function completeLesson(path, lessonId, coinReward = 2) {
   if (!path || typeof path !== 'string') return false

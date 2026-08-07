@@ -60,6 +60,20 @@ try {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_records_user_id ON records(user_id, _id)
   `)
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dialogue_quotas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      count INTEGER DEFAULT 1,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `)
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_dialogue_quota_user_date ON dialogue_quotas(user_id, date)
+  `)
+
   console.log('Database ready')
 } catch (err) {
   console.error('Database init failed:', err)

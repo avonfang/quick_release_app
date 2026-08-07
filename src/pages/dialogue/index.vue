@@ -206,24 +206,42 @@ export default {
       this.sendLetter()
     },
 
-    checkDailyLimit() {
+    async checkDailyLimit() {
       const today = formatDate(new Date())
       const lastDate = uni.getStorageSync('dailyMsgDate') || ''
       const isPremium = uni.getStorageSync('isPremium') || false
+      this.isPremium = isPremium
 
       if (lastDate !== today) {
         uni.setStorageSync('dailyMsgDate', today)
         uni.setStorageSync('dailyMsgCount', 0)
-        this.dailyRemaining = DAILY_FREE_LIMIT
-        this.isPremium = isPremium
-        this.showUpgrade = false
-      } else {
-        const count = uni.getStorageSync('dailyMsgCount') || 0
-        const remaining = isPremium ? 999 : Math.max(0, DAILY_FREE_LIMIT - count)
-        this.dailyRemaining = remaining
-        this.isPremium = isPremium
-        this.showUpgrade = remaining <= 0 && !isPremium
       }
+
+      // Try server-side quota if logged in
+      if (isLoggedIn()) {
+        try {
+          const baseUrl = typeof window !== 'undefined' ? '/api' : 'https://sumeru.online/api'
+          const res = await uni.request({
+            url: baseUrl + '/dialogue/quota',
+            method: 'GET',
+            header: { Authorization: 'Bearer ' + uni.getStorageSync('token') },
+          })
+          if (res.statusCode === 200) {
+            const quotaData = res.data
+            this.dailyRemaining = isPremium ? 999 : Math.max(0, quotaData.remaining)
+            // Sync local count with server
+            uni.setStorageSync('dailyMsgCount', quotaData.count || 0)
+            this.showUpgrade = this.dailyRemaining <= 0 && !isPremium
+            return
+          }
+        } catch {}
+      }
+
+      // Fallback to local count
+      const count = uni.getStorageSync('dailyMsgCount') || 0
+      const remaining = isPremium ? 999 : Math.max(0, DAILY_FREE_LIMIT - count)
+      this.dailyRemaining = remaining
+      this.showUpgrade = remaining <= 0 && !isPremium
     },
 
     sendLetter() {
@@ -237,6 +255,16 @@ export default {
 
       const count = (uni.getStorageSync('dailyMsgCount') || 0) + 1
       uni.setStorageSync('dailyMsgCount', count)
+
+      // Increment server-side quota if logged in
+      if (isLoggedIn()) {
+        const baseUrl = typeof window !== 'undefined' ? '/api' : 'https://sumeru.online/api'
+        uni.request({
+          url: baseUrl + '/dialogue/quota',
+          method: 'POST',
+          header: { Authorization: 'Bearer ' + uni.getStorageSync('token') },
+        }).catch(() => {})
+      }
 
       const emotion = dialogue.detectEmotion(text)
 

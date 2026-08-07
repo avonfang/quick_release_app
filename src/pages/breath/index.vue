@@ -188,7 +188,7 @@ export default {
           confirmText: '查看升级',
           cancelText: '稍后',
           success: (res) => {
-            if (res.confirm) uni.navigateTo({ url: '/pages/profile/index' })
+            if (res.confirm) uni.switchTab({ url: '/pages/profile/index' })
           }
         })
         return

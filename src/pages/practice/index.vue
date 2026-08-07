@@ -199,10 +199,12 @@ export default {
   },
 
   onLoad(options) {
-    const path = options.path || ''
-    const lessonId = options.lessonId || ''
+    const path = options.path || uni.getStorageSync('practicePath') || ''
+    const lessonId = options.lessonId || uni.getStorageSync('practiceLessonId') || ''
     const practiceText = uni.getStorageSync('practiceText') || ''
     uni.removeStorageSync('practiceText')
+    uni.removeStorageSync('practicePath')
+    uni.removeStorageSync('practiceLessonId')
 
     if (practiceText) {
       this.initPractice(practiceText, path, lessonId)

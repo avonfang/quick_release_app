@@ -269,7 +269,9 @@ export default {
       if (emotion === 'unsure') {
         uni.setStorageSync('practiceText',
           '3 分钟安定身心\n\n找一个舒服的姿势坐好。\n\n闭上眼睛，把注意力轻轻放在呼吸上。\n\n吸气——知道自己在吸气。\n呼气——知道自己在呼气。\n\n不需要改变什么，只是观察。\n\n思绪飘走了，没关系，温柔地把注意力带回来。\n\n就这样，和自己安安静静地待一会儿。')
-        uni.navigateTo({ url: '/pages/practice/index?path=presence&lessonId=guided' })
+        uni.setStorageSync('practicePath', 'presence')
+        uni.setStorageSync('practiceLessonId', 'guided')
+        uni.switchTab({ url: '/pages/practice/index' })
         return
       }
 
@@ -281,7 +283,9 @@ export default {
           ? '观察思维\n\n找一个舒服的姿势坐好，闭上眼睛。\n\n想象你坐在一条河边，河上漂着树叶。每一片叶子，都是一个念头。\n\n不要跳进河里，只是看着叶子一片片漂过。\n\n有的叶子大，有的叶子小，有的漂得快，有的慢。\n\n你不需要抓住任何一片，也不需要推开任何一片。\n\n你就是那个观察者。\n\n安静地，和自己待一会儿。'
           : '身体扫描\n\n躺下或坐着，闭上眼睛。\n\n把注意力带到头顶，感受头皮的温度、发丝的重量。\n\n慢慢向下——眉心、眼睑、脸颊、下巴，有没有哪里在紧绷？\n\n只是注意到它，不需要改变什么。\n\n继续向下——颈部、肩膀、手臂、手心。\n\n胸口——感受呼吸的起伏。\n\n腹部——随着吸气轻轻鼓起，呼气自然回落。\n\n臀部、大腿、小腿、脚掌。\n\n全身都在这里，完整、真实。\n\n带着这份觉察，慢慢睁开眼睛。'
         uni.setStorageSync('practiceText', practiceText)
-        uni.navigateTo({ url: `/pages/practice/index?path=presence&lessonId=guided&duration=3` })
+        uni.setStorageSync('practicePath', 'presence')
+        uni.setStorageSync('practiceLessonId', 'guided')
+        uni.switchTab({ url: '/pages/practice/index' })
       }
     },
 
@@ -367,13 +371,17 @@ export default {
         case 'body_scan': {
           const scanText = '身体扫描\n\n躺下或坐着，闭上眼睛。\n\n把注意力带到头顶，感受头皮的温度。\n\n慢慢向下扫描全身——眉心、脸颊、下巴。\n\n颈部、肩膀、手臂、手心。\n\n胸口、腹部、臀部、大腿、小腿、脚掌。\n\n全身都在这里，完整、真实。'
           uni.setStorageSync('practiceText', scanText)
-          uni.navigateTo({ url: '/pages/practice/index?path=presence&lessonId=guided' })
+          uni.setStorageSync('practicePath', 'presence')
+          uni.setStorageSync('practiceLessonId', 'guided')
+          uni.switchTab({ url: '/pages/practice/index' })
           break
         }
         case 'focus': {
           const focusText = '观察思维\n\n找一个舒服的姿势坐好，闭上眼睛。\n\n想象你坐在一条河边，河上漂着树叶。\n\n每一片叶子，都是一个念头。\n\n不要跳进河里，只是看着叶子一片片漂过。\n\n你不需要抓住任何一片，也不需要推开任何一片。\n\n你就是那个观察者。'
           uni.setStorageSync('practiceText', focusText)
-          uni.navigateTo({ url: '/pages/practice/index?path=presence&lessonId=guided' })
+          uni.setStorageSync('practicePath', 'presence')
+          uni.setStorageSync('practiceLessonId', 'guided')
+          uni.switchTab({ url: '/pages/practice/index' })
           break
         }
         default:

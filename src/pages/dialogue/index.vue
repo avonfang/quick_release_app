@@ -343,7 +343,7 @@ export default {
       if (practice.page === 'breath') {
         uni.navigateTo({ url: '/pages/breath/index' })
       } else {
-        uni.navigateTo({ url: '/pages/practice/index' })
+        uni.switchTab({ url: '/pages/practice/index' })
       }
     },
 

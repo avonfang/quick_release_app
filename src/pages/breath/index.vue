@@ -68,16 +68,8 @@
       <view class="breath-area">
         <view :class="'breath-glow ' + animClass" :style="{ animationDuration: phaseDuration + 's' }"></view>
 
-        <view class="svg-ring-box">
-          <svg class="svg-ring" viewBox="0 0 300 300">
-            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
-            <circle
-              cx="150" cy="150" r="130" fill="none" stroke="#FDFBF7" stroke-width="4" stroke-linecap="round"
-              :stroke-dasharray="circumference"
-              :stroke-dashoffset="strokeDashoffset"
-              style="transition: stroke-dashoffset 0.8s linear;"
-            />
-          </svg>
+        <view class="ring-box">
+          <canvas type="2d" id="breathCanvas" class="breath-canvas"></canvas>
         </view>
 
         <view :class="'center-text-wrap ' + animClass" :style="{ animationDuration: phaseDuration + 's' }">
@@ -218,7 +210,61 @@ export default {
       this.animClass = animMap[firstPhase.label] || ''
       this.phaseDuration = firstPhase.sec
       this.currentPhaseIndex = 0
-      this.$nextTick(() => this.runTimer())
+      this.$nextTick(() => {
+        this.initCanvas()
+        this.runTimer()
+      })
+    },
+
+    initCanvas() {
+      const query = uni.createSelectorQuery().in(this)
+      query.select('#breathCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          if (!res[0] || !res[0].node) return
+          const canvas = res[0].node
+          const ctx = canvas.getContext('2d')
+          const dpr = uni.getSystemInfoSync().pixelRatio
+          canvas.width = res[0].width * dpr
+          canvas.height = res[0].height * dpr
+          ctx.scale(dpr, dpr)
+          this._ctx = ctx
+          this._canvasW = res[0].width
+          this._canvasH = res[0].height
+          this.updateRing()
+        })
+    },
+
+    updateRing() {
+      if (!this._ctx || this.phase !== 'running') return
+      const ctx = this._ctx
+      const w = this._canvasW
+      const h = this._canvasH
+      const cx = w / 2
+      const cy = h / 2
+      const r = w / 2 - 6
+      const lineW = 6
+
+      const progress = 1 - (this.strokeDashoffset / CIRCUMFERENCE)
+
+      ctx.clearRect(0, 0, w, h)
+
+      // Background track
+      ctx.beginPath()
+      ctx.arc(cx, cy, r, 0, 2 * Math.PI)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)'
+      ctx.lineWidth = lineW
+      ctx.stroke()
+
+      // Foreground arc — clockwise from top
+      if (progress > 0.001) {
+        ctx.beginPath()
+        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * Math.min(progress, 1))
+        ctx.strokeStyle = '#FDFBF7'
+        ctx.lineWidth = lineW
+        ctx.lineCap = 'round'
+        ctx.stroke()
+      }
     },
 
     runTimer() {
@@ -244,11 +290,12 @@ export default {
           const finalOffset = label === '吸气' ? 0 : CIRCUMFERENCE
           this.countdown = 0
           this.strokeDashoffset = finalOffset
+          this.updateRing()
           this.nextPhase()
           return
         }
 
-        // SVG ring direction
+        // ring direction
         const progress = remaining / totalSec
         let strokeDashoffset
         if (label === '吸气') {
@@ -259,6 +306,7 @@ export default {
 
         const newCountdown = Math.ceil(remaining)
         this.strokeDashoffset = strokeDashoffset
+        this.updateRing()
         if (newCountdown !== this.countdown) this.countdown = newCountdown
 
         // self-correct: stay aligned to 100ms boundaries
@@ -292,6 +340,7 @@ export default {
         this.currentPhaseIndex = 0
         this.countdown = firstPhase.sec
         this.strokeDashoffset = initialOffsetFor(firstPhase.label)
+        this.updateRing()
         this.phaseLabel = firstPhase.label
         this.animClass = animMap[firstPhase.label] || ''
         this.phaseDuration = firstPhase.sec
@@ -300,6 +349,7 @@ export default {
         this.currentPhaseIndex = nextIdx
         this.countdown = nextPhase.sec
         this.strokeDashoffset = initialOffsetFor(nextPhase.label)
+        this.updateRing()
         this.phaseLabel = nextPhase.label
         this.animClass = animMap[nextPhase.label] || ''
         this.phaseDuration = nextPhase.sec
@@ -598,19 +648,15 @@ export default {
   100% { transform: scale(1.05); opacity: 0.35; }
 }
 
-.svg-ring-box {
+.ring-box {
   width: 420rpx;
   height: 420rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
   z-index: 1;
 }
-.svg-ring {
+.breath-canvas {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 20rpx rgba(253, 251, 247, 0.15));
 }
 
 .center-text-wrap {

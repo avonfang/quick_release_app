@@ -213,6 +213,19 @@ export default {
     }
   },
 
+  onShow() {
+    // handle switchTab navigations that set storage before switching
+    const practiceText = uni.getStorageSync('practiceText') || ''
+    if (practiceText) {
+      const path = uni.getStorageSync('practicePath') || ''
+      const lessonId = uni.getStorageSync('practiceLessonId') || ''
+      uni.removeStorageSync('practiceText')
+      uni.removeStorageSync('practicePath')
+      uni.removeStorageSync('practiceLessonId')
+      this.initPractice(practiceText, path, lessonId)
+    }
+  },
+
   methods: {
     initPractice(text, path, lessonId) {
       const steps = text.split('\n\n').filter(s => s.trim().length > 0)

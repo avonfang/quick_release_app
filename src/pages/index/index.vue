@@ -86,7 +86,7 @@
   <view class="recommend-section" v-if="recommendations.length > 0">
     <text class="section-title-sm">{{recSectionTitle}}</text>
     <scroll-view class="rec-scroll" scroll-x enable-flex>
-      <view class="rec-chip" v-for="(item, index) in recommendations" :key="item.key" :data-rec="item" @tap="onRecTap">
+      <view class="rec-chip" v-for="(item, index) in recommendations" :key="item.key" :data-key="item.key" @tap="onRecTap">
         <text class="rec-icon">{{item.icon}}</text>
         <view class="rec-info">
           <text class="rec-label">{{item.label}}</text>
@@ -345,10 +345,10 @@ export default {
     },
 
     onRecTap(e) {
-      const rec = e.currentTarget.dataset.rec
+      const key = e.currentTarget.dataset.key
       uni.vibrateShort({ type: 'light' }).catch(() => {})
 
-      switch (rec.key) {
+      switch (key) {
         case 'beginner':
           uni.navigateTo({ url: '/pages/learning/lesson/index?path=presence&lessonIndex=0' })
           break

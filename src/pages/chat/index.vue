@@ -227,6 +227,46 @@ function cancelStreaming() {
   streamingDone.value = false
 }
 
+// ─── History trimming: keep last 20 + stage summaries ─────────────────
+const MAX_HISTORY = 20
+
+function buildTrimmedHistory(): Array<{ role: string; content: string }> {
+  const msgs = store.messages
+  if (msgs.length <= MAX_HISTORY * 2) {
+    return msgs.map((m: any) => ({ role: m.role, content: m.content }))
+  }
+
+  // Summarize older messages (before the last MAX_HISTORY pairs)
+  const older = msgs.slice(0, msgs.length - MAX_HISTORY)
+  const recent = msgs.slice(msgs.length - MAX_HISTORY)
+
+  const stageSummary: Record<string, string[]> = {}
+  older.forEach((m: any) => {
+    if (m.role === 'user' && m.stage) {
+      if (!stageSummary[m.stage]) stageSummary[m.stage] = []
+      stageSummary[m.stage].push(m.content)
+    }
+  })
+
+  const summaryLines = Object.entries(stageSummary).map(([stage, contents]) => {
+    const label = STAGE_LABELS[stage] || stage
+    return `${label}：${contents.join('；')}`
+  })
+
+  const summary = summaryLines.length > 0
+    ? `[对话摘要]\n${summaryLines.join('\n')}`
+    : ''
+
+  const result: Array<{ role: string; content: string }> = []
+  if (summary) {
+    result.push({ role: 'system', content: summary })
+  }
+  recent.forEach((m: any) => {
+    result.push({ role: m.role, content: m.content })
+  })
+  return result
+}
+
 // ─── Streaming: submit message ────────────────────────────────────────
 async function submitChatMessage() {
   const text = chatInput.value.trim()
@@ -242,7 +282,7 @@ async function submitChatMessage() {
   scrollToBottom()
 
   try {
-    const history = store.messages.map(m => ({ role: m.role, content: m.content }))
+    const history = buildTrimmedHistory()
     const { promise, abort } = chatWithAI(stage, text, history)
     chatGenerator = { abort }
 
@@ -478,11 +518,8 @@ async function sendMessage() {
     captureStageData(currentStage, text)
     await nextTick(); scrollToBottom()
 
-    // 3. Build history payload
-    const history = store.messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }))
+    // 3. Build history payload (trimmed to prevent context overflow)
+    const history = buildTrimmedHistory()
 
     // 4. Call AI via DeepSeek (supports abort)
     const { promise, abort } = chatWithAI(

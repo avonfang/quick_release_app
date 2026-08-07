@@ -53,7 +53,7 @@ export const useSessionStore = defineStore('session', () => {
       id: Date.now(),
       role: msg.role || 'user',
       content: msg.content,
-      stage: stage.value,
+      stage: msg.stage || stage.value,
       timestamp: new Date().toISOString(),
     })
   }

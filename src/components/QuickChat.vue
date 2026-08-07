@@ -3,9 +3,11 @@ import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } 
 import {
   quickAIResponse,
   saveQuickRecord,
+  getQuickRecords,
+  getPatternSummary,
   QUICK_EMOTIONS,
 } from '@/utils/quick-record'
-import type { QuickRecord } from '@/utils/quick-record'
+import type { QuickRecord, PatternSummary } from '@/utils/quick-record'
 
 // ── Inline typewriter ──
 const displayed = ref('')
@@ -62,6 +64,10 @@ const aiResponse = ref('')
 const inputText = ref('')
 const scrollTopVal = ref(0)
 const saving = ref(false)
+const patternSummary = ref<PatternSummary | null>(null)
+
+const STATE_ORDER: State[] = ['emotion', 'intensity', 'event', 'thought', 'factOrWorry']
+const DRAFT_KEY = 'quickChatDraft'
 
 // ── Day/Night theme ──
 const isDark = ref(true)
@@ -119,7 +125,54 @@ function calcScrollHeight() {
   scrollViewHeight.value = windowHeight.value - navH - inputH
 }
 
+function goBack() {
+  const idx = STATE_ORDER.indexOf(state.value)
+  if (idx > 0) {
+    state.value = STATE_ORDER[idx - 1]
+    calcScrollHeight()
+    scrollToBottom()
+  }
+}
+
+function saveDraft() {
+  try {
+    uni.setStorageSync(DRAFT_KEY, JSON.stringify({
+      state: state.value,
+      form: { ...form },
+      messages: messages.value.slice(-20),
+    }))
+  } catch {}
+}
+
+function clearDraft() {
+  try { uni.removeStorageSync(DRAFT_KEY) } catch {}
+}
+
+function restoreDraft(): boolean {
+  try {
+    const raw = uni.getStorageSync(DRAFT_KEY)
+    if (!raw) return false
+    const draft = JSON.parse(raw)
+    if (!draft.state || draft.state === 'idle' || draft.state === 'sending' || draft.state === 'result') return false
+    state.value = draft.state
+    if (draft.form) {
+      form.emotion = draft.form.emotion || ''
+      form.intensity = draft.form.intensity || 5
+      form.event = draft.form.event || ''
+      form.thought = draft.form.thought || ''
+      form.factOrWorry = draft.form.factOrWorry || ''
+    }
+    if (draft.messages) messages.value = draft.messages
+    return true
+  } catch { return false }
+}
+
 function startFlow() {
+  if (restoreDraft()) {
+    calcScrollHeight()
+    scrollToBottom()
+    return
+  }
   state.value = 'emotion'
   calcScrollHeight()
 }
@@ -155,6 +208,7 @@ function onSelectEmotion(emotion: string) {
   const emoji = QUICK_EMOTIONS.find(e => e.value === emotion)?.emoji || ''
   addMsg('user', `${emoji} ${emotion}`)
   state.value = 'intensity'
+  saveDraft()
 }
 
 function onCustomEmotion() {
@@ -165,6 +219,7 @@ function onCustomEmotion() {
   addMsg('user', text)
   inputText.value = ''
   state.value = 'intensity'
+  saveDraft()
 }
 
 function onSelectIntensity(v: number) {
@@ -173,6 +228,7 @@ function onSelectIntensity(v: number) {
   addMsg('ai', `嗯。这种${form.emotion}的感受，强度大概是？1 是很轻微，10 是非常强烈。`)
   addMsg('user', `强度 ${v}/10`)
   state.value = 'event'
+  saveDraft()
 }
 
 function onSubmitEvent() {
@@ -183,6 +239,7 @@ function onSubmitEvent() {
   addMsg('user', text)
   inputText.value = ''
   state.value = 'thought'
+  saveDraft()
 }
 
 function onSubmitThought() {
@@ -193,6 +250,7 @@ function onSubmitThought() {
   addMsg('user', `我注意到我在想：${text}`)
   inputText.value = ''
   state.value = 'factOrWorry'
+  saveDraft()
 }
 
 async function onSelectFactWorry(fw: 'fact' | 'worry') {
@@ -202,6 +260,7 @@ async function onSelectFactWorry(fw: 'fact' | 'worry') {
   addMsg('user', fw === 'fact' ? '更像事实' : '更像一种担心')
   state.value = 'sending'
   saving.value = true
+  clearDraft()
 
   try {
     const reply = await quickAIResponse(form.event, form.emotion, form.thought, fw)
@@ -220,6 +279,9 @@ async function onSelectFactWorry(fw: 'fact' | 'worry') {
     aiResponse.value = '谢谢你的记录。'
   }
 
+  // Compute 14-day pattern summary
+  patternSummary.value = getPatternSummary(14)
+
   state.value = 'result'
   saving.value = false
   nextTick(() => {
@@ -237,7 +299,9 @@ function resetFlow() {
   form.factOrWorry = ''
   aiResponse.value = ''
   inputText.value = ''
+  patternSummary.value = null
   state.value = 'emotion'
+  clearDraft()
 }
 
 function tapResultText() {
@@ -261,6 +325,11 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
           <text class="qc-nav-title">看见此刻</text>
         </view>
         <view class="qc-nav-right">
+          <text
+            v-if="state !== 'emotion' && state !== 'sending' && state !== 'result' && state !== 'idle'"
+            class="qc-nav-back-btn"
+            @tap="goBack"
+          >← 上一步</text>
         </view>
       </view>
     </view>
@@ -431,6 +500,29 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
           </view>
           <view class="qc-deep" hover-class="qc-deep--hover" @tap="goChat">
             <text class="qc-deep-text">想深入探索？进行一次完整的觉察对话 →</text>
+          </view>
+
+          <!-- 14-Day Pattern Summary -->
+          <view v-if="patternSummary && patternSummary.recordCount > 0" class="qc-pattern">
+            <text class="qc-pattern-title">📊 近{{ patternSummary.periodDays }}天 · 共{{ patternSummary.recordCount }}次记录</text>
+            <view class="qc-pattern-row" v-if="patternSummary.topEmotion.label">
+              <text class="qc-pattern-tag">最常见</text>
+              <text class="qc-pattern-val">{{ patternSummary.topEmotion.label }}（{{ patternSummary.topEmotion.count }}次）</text>
+            </view>
+            <view class="qc-pattern-chips" v-if="patternSummary.emotionDistribution.length > 0">
+              <view
+                v-for="d in patternSummary.emotionDistribution"
+                :key="d.label"
+                class="qc-pattern-chip"
+              >
+                <text class="qc-pattern-chip-label">{{ d.label }}</text>
+                <text class="qc-pattern-chip-pct">{{ d.pct }}%</text>
+              </view>
+            </view>
+            <view class="qc-pattern-row" v-if="patternSummary.commonThoughts.length > 0">
+              <text class="qc-pattern-tag">最近想法</text>
+              <text class="qc-pattern-val">{{ patternSummary.commonThoughts[0] }}</text>
+            </view>
           </view>
         </template>
 
@@ -813,5 +905,69 @@ const goHome = () => uni.switchTab({ url: '/pages/index/index' })
   font-size: 28rpx;
   font-weight: 600;
   color: #fff;
+}
+
+/* ── Nav back button ── */
+.qc-nav-back-btn {
+  font-size: 28rpx;
+  color: var(--qc-accent-solid);
+  padding: 8rpx 16rpx;
+}
+
+/* ── Pattern summary ── */
+.qc-pattern {
+  background: var(--qc-card);
+  border-radius: 16px;
+  padding: 28rpx;
+  margin: 0 30rpx 48rpx;
+}
+.qc-pattern-title {
+  font-size: 26rpx;
+  color: var(--qc-dim);
+  display: block;
+  margin-bottom: 20rpx;
+  letter-spacing: 1rpx;
+}
+.qc-pattern-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+.qc-pattern-tag {
+  font-size: 22rpx;
+  color: var(--qc-dim);
+  background: var(--qc-bubble-ai);
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+}
+.qc-pattern-val {
+  font-size: 26rpx;
+  color: var(--qc-text);
+  line-height: 1.5;
+}
+.qc-pattern-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+.qc-pattern-chip {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 32rpx;
+  background: var(--qc-bubble-ai);
+}
+.qc-pattern-chip-label {
+  font-size: 24rpx;
+  color: var(--qc-text);
+}
+.qc-pattern-chip-pct {
+  font-size: 22rpx;
+  color: var(--qc-accent-solid);
+  font-weight: 600;
 }
 </style>

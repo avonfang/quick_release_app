@@ -913,9 +913,7 @@ onBackPress(() => {
         <text class="nav-back-label">返回</text>
       </view>
       <text class="nav-title">一次觉察</text>
-      <view class="nav-btn nav-btn-right">
-        <text class="nav-step-hint">{{ currentStep }}/8</text>
-      </view>
+      <view class="nav-btn nav-btn-right"></view>
     </view>
 
     <!-- Progress dots -->

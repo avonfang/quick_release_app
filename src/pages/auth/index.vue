@@ -9,7 +9,7 @@ const mode = ref<'login' | 'register' | 'forgot' | 'reset'>('login')
 // 如果已有 token，直接跳首页避免重复登录
 onMounted(() => {
   if (isLoggedIn()) {
-    uni.switchTab({ url: '/pages/profile/index' })
+    uni.switchTab({ url: '/pages/index/index' })
   }
 })
 
@@ -58,7 +58,7 @@ async function handleWechatLogin() {
     try { await loadUserState() } catch {}
     try { await syncLocalToServer() } catch (e) { console.warn('Sync failed:', e) }
     try { await syncUserState() } catch {}
-    uni.switchTab({ url: '/pages/profile/index' })
+    uni.switchTab({ url: '/pages/index/index' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : '微信登录失败'
   } finally {
@@ -90,7 +90,7 @@ async function submit() {
     try { await syncLocalToServer() } catch (e) { console.warn('Sync failed:', e) }
     try { await syncUserState() } catch {}
 
-    uni.switchTab({ url: '/pages/profile/index' })
+    uni.switchTab({ url: '/pages/index/index' })
   } catch (e) {
     error.value = e instanceof Error ? e.message : '操作失败'
   } finally {

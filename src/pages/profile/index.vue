@@ -102,7 +102,7 @@
         <text class="coins-amount">{{awakeningCoins}}</text>
         <text class="coins-rule">急救 +1 · 课程 +2 · 呼吸 +1 · 签到 + 里程碑奖励</text>
       </view>
-      <view class="btn btn-primary btn-sm" @tap.stop="openShop">❤️ 商店</view>
+      <view class="btn btn-primary btn-sm" @tap.stop="openShop" v-if="false">❤️ 商店</view>
     </view>
 
     <!-- Shop modal -->
@@ -145,8 +145,8 @@
       </view>
     </view>
 
-    <!-- Premium card -->
-    <view class="premium-card" v-if="!isPremium">
+    <!-- Premium card (hidden) -->
+    <view class="premium-card" v-if="false">
       <view class="premium-header">
         <text class="premium-icon">💌</text>
         <text class="premium-title">此刻 · 陪伴</text>

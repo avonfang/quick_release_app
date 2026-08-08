@@ -498,9 +498,8 @@ export default {
   gap: 20rpx;
   padding: 24rpx 28rpx;
   margin-bottom: 28rpx;
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, #4A3F34 0%, #352E26 40%, #2A231D 100%);
   border-radius: 20rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 .login-tip-icon { font-size: 36rpx; }
 .login-tip-info { flex: 1; display: flex; flex-direction: column; gap: 4rpx; }

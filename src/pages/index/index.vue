@@ -18,6 +18,16 @@
     </view>
   </view>
 
+  <!-- Login prompt -->
+  <view class="login-tip" v-if="showLoginTip" @tap="goAuth">
+    <text class="login-tip-icon">🔐</text>
+    <view class="login-tip-info">
+      <text class="login-tip-title">登录后体验完整功能</text>
+      <text class="login-tip-desc">同步记录 · 云端备份 · 跨设备访问</text>
+    </view>
+    <text class="login-tip-arrow">→</text>
+  </view>
+
   <!-- Mood card -->
   <view class="mood-card">
     <view class="mood-gradient"></view>
@@ -124,6 +134,7 @@ const DURATION_LABELS = {
 
 import OnboardingGuide from '@/components/onboarding-guide.vue'
 import TransitionGuide from '@/components/transition-guide.vue'
+import { isLoggedIn } from '@/utils/api'
 
 export default {
   components: { OnboardingGuide, TransitionGuide },
@@ -140,7 +151,8 @@ export default {
       recommendations: [],
       showOnboarding: false,
       showTransition: false,
-      isDark: true
+      isDark: true,
+      showLoginTip: false
     }
   },
 
@@ -152,6 +164,7 @@ export default {
 
   onShow() {
     this.updateTheme()
+    this.showLoginTip = !isLoggedIn()
     this.loadStreakData()
     this.loadWeeklyMinutes()
     this.updateCheckinState()
@@ -412,6 +425,10 @@ export default {
       uni.switchTab({ url: '/pages/profile/index' })
     },
 
+    goAuth() {
+      uni.navigateTo({ url: '/pages/auth/index' })
+    },
+
     // ─── Day/Night Theme ────────────────────────────────────────
     updateTheme() {
       const hour = new Date().getHours()
@@ -473,6 +490,23 @@ export default {
 }
 .header-user:active { opacity: 0.6; }
 .header-user-icon { font-size: 36rpx; }
+
+/* ====== Login tip ====== */
+.login-tip {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+  margin-bottom: 28rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+.login-tip-icon { font-size: 36rpx; }
+.login-tip-info { flex: 1; display: flex; flex-direction: column; gap: 4rpx; }
+.login-tip-title { font-size: 28rpx; font-weight: 600; color: #FDFBF7; }
+.login-tip-desc { font-size: 22rpx; color: rgba(255, 255, 255, 0.4); }
+.login-tip-arrow { font-size: 32rpx; color: rgba(255, 255, 255, 0.3); }
 
 /* ====== Mood card ====== */
 .mood-card {

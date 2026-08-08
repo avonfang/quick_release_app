@@ -16,11 +16,6 @@ onLaunch(() => {
   const themeStore = useThemeStore();
   themeStore.init();
 
-  // Login guard: redirect to auth page if not logged in
-  const token = uni.getStorageSync('token')
-  if (!token) {
-    uni.reLaunch({ url: '/pages/auth/index' })
-  }
 });
 onShow(() => {
   console.log("App Show");

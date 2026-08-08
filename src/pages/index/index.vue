@@ -683,6 +683,18 @@ export default {
 }
 
 /* mood card */
+.theme-light .login-tip {
+  background: linear-gradient(135deg, #FFFBF5, #F5EDE0, #E8DDD0);
+}
+.theme-light .login-tip-title {
+  color: #1C1A17;
+}
+.theme-light .login-tip-desc {
+  color: #9A8E82;
+}
+.theme-light .login-tip-arrow {
+  color: #C4B8AC;
+}
 .theme-light .mood-card {
   background: linear-gradient(135deg, #FFFBF5, #F5EDE0, #E8DDD0);
 }

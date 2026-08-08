@@ -282,8 +282,9 @@ async function submitChatMessage() {
   scrollToBottom()
 
   try {
-    const history = buildTrimmedHistory()
-    const { promise, abort } = chatWithAI(stage, text, history)
+    // Build history BEFORE the user message was added, since chatWithAI appends userInput separately
+    const historyPreSubmit = buildTrimmedHistory().slice(0, -1)
+    const { promise, abort } = chatWithAI(stage, text, historyPreSubmit)
     chatGenerator = { abort }
 
     const reply = await promise
@@ -518,8 +519,8 @@ async function sendMessage() {
     captureStageData(currentStage, text)
     await nextTick(); scrollToBottom()
 
-    // 3. Build history payload (trimmed to prevent context overflow)
-    const history = buildTrimmedHistory()
+    // 3. Build history payload (exclude last user msg since chatWithAI appends it)
+    const history = buildTrimmedHistory().slice(0, -1)
 
     // 4. Call AI via DeepSeek (supports abort)
     const { promise, abort } = chatWithAI(

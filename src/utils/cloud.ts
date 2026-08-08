@@ -61,10 +61,14 @@ export function chatWithAI(
     systemContent += `\n\n${BELIEF_EXTRACTION_PROMPT}`
   }
 
+  // Avoid duplicating userInput if it's already the last entry in history
+  const lastHistoryMsg = history[history.length - 1]
+  const alreadyInHistory = lastHistoryMsg && lastHistoryMsg.role === 'user' && lastHistoryMsg.content === userInput
+
   const apiMessages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemContent },
     ...history,
-    { role: 'user', content: userInput },
+    ...(alreadyInHistory ? [] : [{ role: 'user', content: userInput }]),
   ]
 
   let requestTask: any = null
